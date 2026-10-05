@@ -4,30 +4,11 @@ import { useState } from "react";
 // React Routerから、別のページへ移動するための機能を読み込む
 import { useNavigate } from "react-router-dom";
 
-
-// FastAPIから取得するユーザー情報の型
+// ユーザー情報の型を読み込む
 //
-// 「ユーザーにはどんなデータが入っているか」を
-// TypeScriptに教えるための設計図
-interface User {
-  // ユーザーID
-  id: number;
-
-  // ニックネーム
-  nickname: string;
-
-  // 好きなポケモン
-  //
-  // DBではNULLになる可能性があるため、
-  // stringまたはnullとして定義する
-  favorite_pokemon: string | null;
-
-  // 使用言語
-  language: string | null;
-
-  // 自己紹介
-  introduction: string | null;
-}
+// typeを付けることで、
+// 「これは実行時の値ではなく型ですよ」とTypeScriptに伝える。
+import type { User } from "../types/user";
 
 
 // ユーザー一覧画面
