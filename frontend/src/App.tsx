@@ -1,56 +1,98 @@
-// React Routerから、URLに応じて表示するページを
-// 切り替えるための機能を読み込む
-import { Routes, Route } from "react-router-dom";
+// React Routerから、
+// URLに応じて表示するページを切り替えるための機能を読み込む
+import {
+  Routes,
+  Route,
+} from "react-router-dom";
 
-// ログイン画面
+
+// 各ページを読み込む
 import LoginPage from "./pages/LoginPage";
-
-// ユーザー一覧画面
 import UsersPage from "./pages/UsersPage";
-
-// マイプロフィール画面
 import ProfilePage from "./pages/ProfilePage";
-
-// ユーザー詳細ページ
 import UserDetailPage from "./pages/UserDetailPage";
 
 
-// PokeMeet全体のページ切り替えを管理するコンポーネント
+// ログインが必要なページを保護するコンポーネント
+import ProtectedRoute from "./components/ProtectedRoute";
+
+
+// PokeMeetのページルーティングを管理するコンポーネント
 function App() {
+
   return (
-    // Routesの中に、アプリで使用するURLを定義する
     <Routes>
 
-      {/*
-        「/」にアクセスした場合、
-        LoginPageを表示する
+      {/* =========================
+          ログイン画面
+          ========================= */}
+
+      {/* 
+        ログイン画面は、
+        ログインしていなくてもアクセスできる。
       */}
       <Route
         path="/"
         element={<LoginPage />}
       />
 
-      {/*
-        「/users」にアクセスした場合、
-        UsersPageを表示する
+
+      {/* =========================
+          ユーザー一覧
+          ========================= */}
+
+      {/* 
+        ユーザー一覧はログインが必要。
+
+        ProtectedRouteで囲むことで、
+        JWTがない場合はログイン画面へ戻す。
       */}
       <Route
         path="/users"
-        element={<UsersPage />}
+        element={
+          <ProtectedRoute>
+            <UsersPage />
+          </ProtectedRoute>
+        }
       />
 
+
+      {/* =========================
+          ユーザー詳細
+          ========================= */}
+
+      {/* 
+        /users/5
+        /users/10
+        のようなURL。
+
+        ここもログインが必要。
+      */}
       <Route
         path="/users/:userId"
-        element={<UserDetailPage />}
+        element={
+          <ProtectedRoute>
+            <UserDetailPage />
+          </ProtectedRoute>
+        }
       />
 
-      {/*
-        「/profile」にアクセスした場合、
-        ProfilePageを表示する
+
+      {/* =========================
+          マイプロフィール
+          ========================= */}
+
+      {/* 
+        自分のプロフィールを見る場合も
+        ログインが必要。
       */}
       <Route
         path="/profile"
-        element={<ProfilePage />}
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
       />
 
     </Routes>
@@ -58,6 +100,5 @@ function App() {
 }
 
 
-// Appコンポーネントを他のファイルから
-// 使用できるようにする
+// Appを他のファイルから使用できるようにする
 export default App;
