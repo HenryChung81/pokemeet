@@ -1,0 +1,105 @@
+{
+  "compilerOptions": {
+
+    // JavaScriptをどのバージョン向けに変換・チェックするか
+    // ES2020は、現在のブラウザで広く使われているJavaScriptの仕様
+    "target": "ES2020",
+
+    // TypeScriptでクラスのフィールドを扱うときの動作を指定
+    // 今回はVite + Reactの標準的な設定
+    "useDefineForClassFields": true,
+
+    // TypeScriptが利用できる標準APIの型情報
+    // ES2020 → JavaScriptの基本機能
+    // DOM → documentやwindowなどブラウザの機能
+    // DOM.Iterable → NodeListなどの反復処理に必要な型
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+
+    // JavaScriptファイル（.js / .jsx）もTypeScriptプロジェクト内で
+    // 使用できるようにする
+    //
+    // 今回は既存のReactが.jsxなので、
+    // JS → TSへ少しずつ移行するためにtrueにしている
+    "allowJs": true,
+
+    // 外部ライブラリの型チェックを省略する
+    // node_modulesの中まで細かくチェックしないことで、
+    // コンパイルを速くする
+    "skipLibCheck": true,
+
+
+    // CommonJS形式のライブラリなどを
+    // ES Modules形式で扱いやすくする
+    "esModuleInterop": true,
+
+    // import React from "react" のような
+    // デフォルトimportを使いやすくする
+    "allowSyntheticDefaultImports": true,
+
+
+    // TypeScriptの厳格な型チェックを有効にする
+    //
+    // 例えば、
+    // string型の変数にnumberを入れるなどの
+    // ミスを見つけてくれる
+    //
+    // TypeScriptを使う大きなメリットの一つ
+    "strict": true,
+
+    // ファイル名の大文字・小文字を正しく扱う
+    //
+    // Macでは気付きにくいファイル名の大文字小文字の違いによる
+    // エラーを防ぎやすくする
+    "forceConsistentCasingInFileNames": true,
+
+
+    // JavaScriptのモジュール方式を指定
+    //
+    // Reactでは
+    // import ...
+    // export ...
+    // というES Modulesを使う
+    "module": "ESNext",
+
+    // モジュールをどのように探すかを指定
+    //
+    // Viteなどの現代的なフロントエンド環境に適した設定
+    "moduleResolution": "Bundler",
+
+
+    // JSONファイルをimportできるようにする
+    //
+    // 例えば、
+    // import data from "./data.json";
+    // のような書き方ができる
+    "resolveJsonModule": true,
+
+    // TypeScriptの各ファイルを独立したモジュールとして扱う
+    // Viteなどのビルドツールとの相性が良い
+    "isolatedModules": true,
+
+    // TypeScript自身はJavaScriptファイルを生成しない
+    //
+    // 実際のビルドや変換はViteが担当する
+    "noEmit": true,
+
+
+    // JSXをReact用のJavaScriptへ変換する設定
+    //
+    // .tsxファイルの中で
+    // <div>Hello</div>
+    // のようなJSXを書けるようにする
+    "jsx": "react-jsx",
+
+    // Viteが提供している型情報を読み込む
+    //
+    // import.meta.env など、Vite特有の機能を
+    // TypeScriptが理解できるようになる
+    "types": ["vite/client"]
+  },
+
+  // TypeScriptがチェックする対象
+  //
+  // 今回はsrcフォルダ以下を対象にする
+  "include": ["src"]
+}
