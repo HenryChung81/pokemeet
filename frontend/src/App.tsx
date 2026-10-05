@@ -8,6 +8,7 @@ import {
 
 // 各ページを読み込む
 import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 import UsersPage from "./pages/UsersPage";
 import ProfilePage from "./pages/ProfilePage";
 import UserDetailPage from "./pages/UserDetailPage";
@@ -27,10 +28,6 @@ function App() {
           ログイン画面
           ========================= */}
 
-      {/* 
-        ログイン画面は、
-        ログインしていなくてもアクセスできる。
-      */}
       <Route
         path="/"
         element={<LoginPage />}
@@ -38,15 +35,23 @@ function App() {
 
 
       {/* =========================
-          ユーザー一覧
+          新規登録画面
           ========================= */}
 
       {/* 
-        ユーザー一覧はログインが必要。
-
-        ProtectedRouteで囲むことで、
-        JWTがない場合はログイン画面へ戻す。
+        新規登録はログインしていなくても
+        アクセスできる。
       */}
+      <Route
+        path="/register"
+        element={<RegisterPage />}
+      />
+
+
+      {/* =========================
+          ユーザー一覧
+          ========================= */}
+
       <Route
         path="/users"
         element={
@@ -61,13 +66,6 @@ function App() {
           ユーザー詳細
           ========================= */}
 
-      {/* 
-        /users/5
-        /users/10
-        のようなURL。
-
-        ここもログインが必要。
-      */}
       <Route
         path="/users/:userId"
         element={
@@ -82,10 +80,6 @@ function App() {
           マイプロフィール
           ========================= */}
 
-      {/* 
-        自分のプロフィールを見る場合も
-        ログインが必要。
-      */}
       <Route
         path="/profile"
         element={
