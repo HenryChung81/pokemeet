@@ -17,6 +17,9 @@ class LoginRequest(BaseModel):
 
 
 # プロフィール編集時に受け取るデータ
+#
+# パスワードは今回は変更しない。
+# プロフィールに関係する項目だけ変更する。
 class UserUpdate(BaseModel):
     nickname: str
     favorite_pokemon: str | None = None
