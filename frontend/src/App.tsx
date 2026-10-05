@@ -11,6 +11,9 @@ import UsersPage from "./pages/UsersPage";
 // マイプロフィール画面
 import ProfilePage from "./pages/ProfilePage";
 
+// ユーザー詳細ページ
+import UserDetailPage from "./pages/UserDetailPage";
+
 
 // PokeMeet全体のページ切り替えを管理するコンポーネント
 function App() {
@@ -34,6 +37,11 @@ function App() {
       <Route
         path="/users"
         element={<UsersPage />}
+      />
+
+      <Route
+        path="/users/:userId"
+        element={<UserDetailPage />}
       />
 
       {/*
