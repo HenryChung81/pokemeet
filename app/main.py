@@ -1,20 +1,39 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import users
 from app.routers import auth
 
 
-# FastAPIアプリ本体を作る
+# FastAPIアプリ本体
 app = FastAPI()
 
 
-# users.pyで定義したRouterを
-# FastAPIアプリに登録する
+# ReactからFastAPIへのアクセスを許可する
+app.add_middleware(
+    CORSMiddleware,
+
+    # React開発サーバーからのアクセスだけ許可
+    allow_origins=[
+        "http://localhost:5173"
+    ],
+
+    # Cookieなどの認証情報を許可
+    allow_credentials=True,
+
+    # GET、POST、PUT、DELETEなどを許可
+    allow_methods=["*"],
+
+    # AuthorizationなどのHTTPヘッダーを許可
+    allow_headers=["*"],
+)
+
+
+# ユーザー関係APIを登録
 app.include_router(users.router)
 
 
-# auth.pyで定義したRouterを
-# FastAPIアプリに登録する
+# 認証関係APIを登録
 app.include_router(auth.router)
 
 

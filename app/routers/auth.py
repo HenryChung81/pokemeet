@@ -10,10 +10,10 @@ from sqlalchemy import text
 from pwdlib import PasswordHash
 
 from app.database import engine
-from app.schemas.user import LoginRequest
+from app.schemas.user import LoginRequest, UserUpdate
 
 
-# .env ファイルの内容を読み込む
+# .env ファイルを読み込む
 load_dotenv()
 
 
@@ -21,20 +21,19 @@ load_dotenv()
 router = APIRouter()
 
 
-# パスワードのハッシュ化・検証に使う
+# パスワードの検証に使う
 password_hash = PasswordHash.recommended()
 
 
-# Authorization: Bearer <token>
-# という形式の認証を使う
+# Bearer認証を使用する
 security = HTTPBearer()
 
 
-# .env からJWT署名用の秘密鍵を取得する
+# .envからJWT署名用の秘密鍵を取得
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 
-# JWTの署名アルゴリズム
+# JWTで使用する署名方式
 ALGORITHM = "HS256"
 
 
@@ -45,19 +44,14 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 # JWTを作成する関数
 def create_access_token(user_id: int):
 
-    # 現在時刻から30分後をJWTの有効期限にする
+    # 現在時刻から30分後を有効期限にする
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=ACCESS_TOKEN_EXPIRE_MINUTES
     )
 
     # JWTの中に入れるデータ
     payload = {
-        # sub は subject の略
-        # 「このJWTが誰のものか」を表す
         "sub": str(user_id),
-
-        # exp は expiration の略
-        # JWTの有効期限
         "exp": expire
     }
 
@@ -72,47 +66,35 @@ def create_access_token(user_id: int):
 
 
 # JWTを検証して、
-# ログイン中ユーザーのIDを取得する関数
+# ログイン中ユーザーのIDを取得する
 def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
 
-    # Authorizationヘッダーから
-    # JWT本体だけを取得する
+    # Bearerの後ろにあるJWT本体を取得
     token = credentials.credentials
 
     try:
 
-        # JWTを検証して中身を取り出す
-        #
-        # ・署名が正しいか
-        # ・有効期限が切れていないか
-        #
-        # などを確認してくれる
+        # JWTを検証する
         payload = jwt.decode(
             token,
             SECRET_KEY,
             algorithms=[ALGORITHM]
         )
 
-        # JWTのsubからuser_idを取得する
+        # JWTからuser_idを取得
         user_id = payload.get("sub")
 
-        # user_idがJWTに入っていない場合
+        # user_idが入っていなければ不正
         if user_id is None:
             raise HTTPException(
                 status_code=401,
                 detail="無効なトークンです"
             )
 
-        # JWTでは文字列として保存しているため
-        # int型へ変換して返す
         return int(user_id)
 
-    # JWTが壊れている、
-    # 署名が違う、
-    # 有効期限が切れている、
-    # などの場合
     except jwt.PyJWTError:
 
         raise HTTPException(
@@ -125,10 +107,10 @@ def get_current_user_id(
 @router.post("/login")
 def login(login_data: LoginRequest):
 
-    # MySQLへ接続する
+    # MySQLへ接続
     with engine.connect() as connection:
 
-        # nicknameが一致するユーザーを検索する
+        # nicknameでユーザーを検索
         result = connection.execute(
             text("""
                 SELECT
@@ -143,7 +125,7 @@ def login(login_data: LoginRequest):
             }
         )
 
-        # 検索結果から1件取得する
+        # 検索結果を1件取得
         user = result.fetchone()
 
         # ユーザーが存在しない場合
@@ -153,26 +135,25 @@ def login(login_data: LoginRequest):
                 detail="ユーザー名またはパスワードが違います"
             )
 
-        # ユーザーが入力したパスワードと
-        # DBに保存されているハッシュ値を比較する
+        # パスワードを検証
         password_ok = password_hash.verify(
             login_data.password,
             user.password_hash
         )
 
-        # パスワードが一致しない場合
+        # パスワードが違う場合
         if not password_ok:
             raise HTTPException(
                 status_code=401,
                 detail="ユーザー名またはパスワードが違います"
             )
 
-        # ログイン成功したユーザー用のJWTを作る
+        # ログイン成功したのでJWTを作成
         access_token = create_access_token(
             user.id
         )
 
-        # JWTをクライアントへ返す
+        # JWTを返す
         return {
             "message": "ログイン成功",
             "access_token": access_token,
@@ -180,25 +161,25 @@ def login(login_data: LoginRequest):
         }
 
 
-# ログイン中ユーザー取得API
+# ログイン中ユーザーのプロフィール取得
 @router.get("/me")
 def get_me(
-    # /meを実行する前に
-    # get_current_user_id()を実行して
-    # JWTからuser_idを取得する
     user_id: int = Depends(get_current_user_id)
 ):
 
-    # MySQLへ接続する
+    # MySQLへ接続
     with engine.connect() as connection:
 
-        # JWTから取得したuser_idを使って
-        # ユーザー情報を検索する
+        # JWTから取得したuser_idで
+        # 自分のプロフィールを検索する
         result = connection.execute(
             text("""
                 SELECT
                     id,
-                    nickname
+                    nickname,
+                    favorite_pokemon,
+                    language,
+                    introduction
                 FROM users
                 WHERE id = :user_id
             """),
@@ -207,19 +188,81 @@ def get_me(
             }
         )
 
-        # 検索結果から1件取得する
+        # 検索結果を1件取得
         user = result.fetchone()
 
-        # JWT自体は正しいが、
-        # DB上にユーザーが存在しない場合
+        # DBにユーザーが存在しない場合
         if user is None:
             raise HTTPException(
                 status_code=404,
                 detail="ユーザーが見つかりません"
             )
 
-        # ログイン中ユーザーの情報を返す
+        # パスワード情報は返さず、
+        # プロフィール情報だけ返す
         return {
             "id": user.id,
-            "nickname": user.nickname
+            "nickname": user.nickname,
+            "favorite_pokemon": user.favorite_pokemon,
+            "language": user.language,
+            "introduction": user.introduction
         }
+
+
+# ログイン中ユーザーのプロフィール編集
+@router.put("/me")
+def update_me(
+    user_data: UserUpdate,
+    user_id: int = Depends(get_current_user_id)
+):
+
+    # MySQLへ接続
+    with engine.connect() as connection:
+
+        # ユーザーが存在するか確認
+        result = connection.execute(
+            text("""
+                SELECT id
+                FROM users
+                WHERE id = :user_id
+            """),
+            {
+                "user_id": user_id
+            }
+        )
+
+        user = result.fetchone()
+
+        # ユーザーが存在しない場合
+        if user is None:
+            raise HTTPException(
+                status_code=404,
+                detail="ユーザーが見つかりません"
+            )
+
+        # プロフィール情報を更新
+        connection.execute(
+            text("""
+                UPDATE users
+                SET
+                    nickname = :nickname,
+                    favorite_pokemon = :favorite_pokemon,
+                    language = :language,
+                    introduction = :introduction
+                WHERE id = :user_id
+            """),
+            {
+                "nickname": user_data.nickname,
+                "favorite_pokemon": user_data.favorite_pokemon,
+                "language": user_data.language,
+                "introduction": user_data.introduction,
+                "user_id": user_id
+            }
+        )
+
+        # UPDATEを確定
+        connection.commit()
+
+    return {
+        "message": "プロフィールを更新しました"
+    }

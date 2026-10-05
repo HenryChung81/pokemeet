@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
 from pwdlib import PasswordHash
 
@@ -6,11 +6,11 @@ from app.database import engine
 from app.schemas.user import UserCreate
 
 
-# このファイル専用のRouterを作る
+# ユーザー関係のAPIをまとめるRouter
 router = APIRouter()
 
 
-# パスワードをハッシュ化するための機能
+# パスワードのハッシュ化に使う
 password_hash = PasswordHash.recommended()
 
 
@@ -21,12 +21,19 @@ def get_users():
     # MySQLへ接続する
     with engine.connect() as connection:
 
-        # usersテーブルのデータを取得する
+        # usersテーブルから必要な項目を取得する
         result = connection.execute(
-            text("SELECT * FROM users")
+            text("""
+                SELECT
+                    id,
+                    nickname,
+                    favorite_pokemon,
+                    language,
+                    introduction
+                FROM users
+            """)
         )
 
-        # APIで返すユーザー一覧
         users = []
 
         # DBの結果を1行ずつ処理する
@@ -34,10 +41,57 @@ def get_users():
 
             users.append({
                 "id": row.id,
-                "nickname": row.nickname
+                "nickname": row.nickname,
+                "favorite_pokemon": row.favorite_pokemon,
+                "language": row.language,
+                "introduction": row.introduction
             })
 
         return users
+
+
+# ユーザー詳細取得API
+@router.get("/users/{user_id}")
+def get_user(user_id: int):
+
+    # MySQLへ接続する
+    with engine.connect() as connection:
+
+        # 指定されたIDのユーザーを取得する
+        result = connection.execute(
+            text("""
+                SELECT
+                    id,
+                    nickname,
+                    favorite_pokemon,
+                    language,
+                    introduction
+                FROM users
+                WHERE id = :user_id
+            """),
+            {
+                "user_id": user_id
+            }
+        )
+
+        # DBから1件取得する
+        user = result.fetchone()
+
+        # ユーザーが存在しない場合
+        if user is None:
+            raise HTTPException(
+                status_code=404,
+                detail="ユーザーが見つかりません"
+            )
+
+        # ユーザー情報を返す
+        return {
+            "id": user.id,
+            "nickname": user.nickname,
+            "favorite_pokemon": user.favorite_pokemon,
+            "language": user.language,
+            "introduction": user.introduction
+        }
 
 
 # ユーザー新規登録API
@@ -52,25 +106,34 @@ def create_user(user: UserCreate):
     # MySQLへ接続する
     with engine.connect() as connection:
 
-        # usersテーブルへ登録
+        # ユーザー情報をDBへ登録する
         connection.execute(
             text("""
                 INSERT INTO users (
                     nickname,
-                    password_hash
+                    password_hash,
+                    favorite_pokemon,
+                    language,
+                    introduction
                 )
                 VALUES (
                     :nickname,
-                    :password_hash
+                    :password_hash,
+                    :favorite_pokemon,
+                    :language,
+                    :introduction
                 )
             """),
             {
                 "nickname": user.nickname,
-                "password_hash": hashed_password
+                "password_hash": hashed_password,
+                "favorite_pokemon": user.favorite_pokemon,
+                "language": user.language,
+                "introduction": user.introduction
             }
         )
 
-        # DB変更を確定する
+        # INSERTを確定する
         connection.commit()
 
     return {
