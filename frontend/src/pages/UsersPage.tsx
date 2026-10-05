@@ -5,9 +5,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 // ユーザー情報の型を読み込む
-//
-// typeを付けることで、
-// 「これは実行時の値ではなく型ですよ」とTypeScriptに伝える。
 import type { User } from "../types/user";
 
 
@@ -15,19 +12,32 @@ import type { User } from "../types/user";
 function UsersPage() {
 
   // ユーザー一覧を保存するstate
-  //
-  // User[]は「User型のデータが複数入った配列」という意味
   const [users, setUsers] = useState<User[]>([]);
 
   // エラーメッセージなどを保存するstate
   const [message, setMessage] = useState("");
 
 
-  // React Routerを使って別ページへ移動するための関数
+  // ページ移動に使う
   const navigate = useNavigate();
 
 
-  // ユーザー一覧を取得する関数
+  // ログアウト処理
+  const handleLogout = (): void => {
+
+    // localStorageに保存しているJWTを削除する
+    //
+    // ログイン時に保存したaccess_tokenを削除することで、
+    // ログイン状態を解除する。
+    localStorage.removeItem("access_token");
+
+
+    // ログイン画面へ移動する
+    navigate("/");
+  };
+
+
+  // ユーザー一覧を取得する処理
   const getUsers = async (): Promise<void> => {
 
     try {
@@ -38,10 +48,7 @@ function UsersPage() {
       );
 
 
-      // FastAPIから返ってきたJSONを取得する
-      //
-      // User[]として、
-      // 「ユーザー情報の配列」であることをTypeScriptに伝える
+      // FastAPIから返されたJSONを取得する
       const data: User[] = await response.json();
 
 
@@ -75,16 +82,24 @@ function UsersPage() {
   return (
     <div>
 
-      {/* アプリのタイトル */}
       <h1>PokeMeet</h1>
 
-      {/* ページのタイトル */}
       <h2>ユーザー一覧</h2>
 
 
-      {/* 自分のプロフィールページへ移動するボタン */}
-      <button onClick={() => navigate("/profile")}>
+      {/* マイプロフィールページへ移動するボタン */}
+      <button
+        onClick={() => navigate("/profile")}
+      >
         マイプロフィール
+      </button>
+
+
+      {/* ログアウトボタン */}
+      <button
+        onClick={handleLogout}
+      >
+        ログアウト
       </button>
 
 
@@ -102,18 +117,15 @@ function UsersPage() {
       <p>{message}</p>
 
 
-      {/* ユーザーが1人以上存在する場合だけ一覧を表示 */}
+      {/* ユーザーが存在する場合だけ一覧を表示 */}
       {users.length > 0 && (
         <div>
 
-          {/* users配列を1件ずつ処理する */}
           {users.map((user) => (
 
-            // Reactでは、一覧を表示するときに
-            // 各要素を識別するためのkeyが必要
             <div key={user.id}>
 
-              {/* ユーザーのニックネーム */}
+              {/* ユーザー詳細ページへ移動 */}
               <h3
                 onClick={() =>
                   navigate(`/users/${user.id}`)
@@ -124,21 +136,18 @@ function UsersPage() {
               </h3>
 
 
-              {/* 好きなポケモン */}
               <p>
                 好きなポケモン：
                 {user.favorite_pokemon}
               </p>
 
 
-              {/* 使用言語 */}
               <p>
                 言語：
                 {user.language}
               </p>
 
 
-              {/* 自己紹介 */}
               <p>
                 自己紹介：
                 {user.introduction}
@@ -148,6 +157,7 @@ function UsersPage() {
               <hr />
 
             </div>
+
           ))}
 
         </div>
