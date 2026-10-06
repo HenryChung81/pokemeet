@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import users
 from app.routers import auth
+from app.routers import events
 
 
 # FastAPIアプリ本体
@@ -35,6 +36,10 @@ app.include_router(users.router)
 
 # 認証関係APIを登録
 app.include_router(auth.router)
+
+
+# 交流会関係APIを登録
+app.include_router(events.router)
 
 
 # トップページ

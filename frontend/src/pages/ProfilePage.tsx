@@ -1,26 +1,23 @@
-// Reactの状態管理と副作用を使うための機能を読み込む
-import {
-  useEffect,
-  useState,
-} from "react";
+// Reactの状態管理・初回処理に使用する機能
+import { useEffect, useState } from "react";
 
 // React Routerからページ移動に使う機能を読み込む
 import { useNavigate } from "react-router-dom";
 
 
-// FastAPIから取得するユーザー情報の型
-interface User {
+// プロフィール情報の型
+interface UserProfile {
 
   // ユーザーID
   id: number;
 
-  // ニックネーム
+  // 他のユーザーに表示する名前
   nickname: string;
 
   // 好きなポケモン
   favorite_pokemon: string | null;
 
-  // 使用言語
+  // 使用する言語
   language: string | null;
 
   // 自己紹介
@@ -28,27 +25,10 @@ interface User {
 }
 
 
-// プロフィール更新APIへ送るデータの型
-interface UserUpdate {
-
-  // ニックネーム
-  nickname: string;
-
-  // 好きなポケモン
-  favorite_pokemon: string | null;
-
-  // 使用言語
-  language: string | null;
-
-  // 自己紹介
-  introduction: string | null;
-}
-
-
-// FastAPIの更新APIが返すデータの型
+// プロフィール更新APIのレスポンス
 interface UpdateResponse {
 
-  // APIから返されるメッセージ
+  // 更新成功時のメッセージ
   message?: string;
 
   // エラー時のメッセージ
@@ -59,49 +39,54 @@ interface UpdateResponse {
 // マイプロフィール画面
 function ProfilePage() {
 
-  // 現在のユーザー情報を管理する
+  // 現在のユーザー情報
   const [user, setUser] =
-    useState<User | null>(null);
+    useState<UserProfile | null>(null);
 
 
-  // エラーメッセージなどを管理する
-  const [message, setMessage] =
-    useState("");
-
-
-  // 編集モードかどうかを管理する
-  const [isEditing, setIsEditing] =
-    useState(false);
-
-
-  // 編集中のニックネーム
+  // ニックネーム入力用
   const [nickname, setNickname] =
     useState("");
 
 
-  // 編集中の好きなポケモン
+  // 好きなポケモン入力用
   const [favoritePokemon, setFavoritePokemon] =
     useState("");
 
 
-  // 編集中の言語
+  // 言語入力用
   const [language, setLanguage] =
     useState("");
 
 
-  // 編集中の自己紹介
+  // 自己紹介入力用
   const [introduction, setIntroduction] =
     useState("");
 
 
-  // ページ移動に使う
+  // メッセージ表示用
+  const [message, setMessage] =
+    useState("");
+
+
+  // 編集モードかどうか
+  const [isEditing, setIsEditing] =
+    useState(false);
+
+
+  // 保存中かどうか
+  const [isSaving, setIsSaving] =
+    useState(false);
+
+
+  // ページ移動に使用する
   const navigate = useNavigate();
 
 
-  // プロフィールを取得する関数
+  // 自分のプロフィールを取得する関数
   const getMyProfile = async (): Promise<void> => {
 
-    // localStorageからJWTを取得する
+    // localStorageからJWTを取得
     const token =
       localStorage.getItem("access_token");
 
@@ -117,7 +102,7 @@ function ProfilePage() {
 
     try {
 
-      // FastAPIから自分のプロフィールを取得する
+      // FastAPIのプロフィール取得APIへアクセス
       const response = await fetch(
         "http://127.0.0.1:8000/me",
         {
@@ -130,51 +115,44 @@ function ProfilePage() {
       );
 
 
-      // FastAPIからJSONを取得する
-      const data: User | {
-        detail?: string;
-      } = await response.json();
+      // FastAPIから返されたJSONを取得
+      const data = await response.json();
 
 
       // エラーの場合
       if (!response.ok) {
 
         setMessage(
-          "detail" in data && data.detail
-            ? data.detail
-            : "プロフィールの取得に失敗しました"
+          data.detail ||
+          "プロフィールの取得に失敗しました"
         );
 
         return;
       }
 
 
-      // ユーザー情報として保存する
-      setUser(data as User);
+      // プロフィール情報を保存
+      setUser(data);
 
 
-      // 編集フォームにも現在の値を入れる
-      const profile = data as User;
-
-      setNickname(
-        profile.nickname
-      );
+      // 編集フォームにも現在の値を設定
+      setNickname(data.nickname || "");
 
       setFavoritePokemon(
-        profile.favorite_pokemon ?? ""
+        data.favorite_pokemon || ""
       );
 
       setLanguage(
-        profile.language ?? ""
+        data.language || ""
       );
 
       setIntroduction(
-        profile.introduction ?? ""
+        data.introduction || ""
       );
 
     } catch (error) {
 
-      // 通信エラーなどをコンソールに表示
+      // 通信エラー
       console.error(error);
 
       setMessage(
@@ -184,7 +162,7 @@ function ProfilePage() {
   };
 
 
-  // ページを開いたときにプロフィールを取得する
+  // ページを開いたときにプロフィールを取得
   useEffect(() => {
 
     getMyProfile();
@@ -192,10 +170,10 @@ function ProfilePage() {
   }, []);
 
 
-  // プロフィールを更新する関数
+  // プロフィール更新処理
   const handleUpdate = async (): Promise<void> => {
 
-    // localStorageからJWTを取得する
+    // JWTを取得
     const token =
       localStorage.getItem("access_token");
 
@@ -209,57 +187,55 @@ function ProfilePage() {
     }
 
 
-    // ニックネームが空の場合
-    if (!nickname.trim()) {
-
-      setMessage(
-        "ニックネームを入力してください"
-      );
-
-      return;
-    }
-
-
     try {
 
-      // FastAPIのプロフィール更新APIへ送信する
+      // 保存中にする
+      setIsSaving(true);
+
+      // メッセージをクリア
+      setMessage("");
+
+
+      // FastAPIのプロフィール更新APIへアクセス
       const response = await fetch(
         "http://127.0.0.1:8000/me",
         {
           // 更新なのでPUT
           method: "PUT",
 
-          // JSONを送信する
           headers: {
             "Content-Type": "application/json",
 
-            // JWTを送信する
             Authorization: `Bearer ${token}`,
           },
 
           // 更新するプロフィール情報
+          //
+          // login_idは送らない。
+          // login_idは変更できない設計。
           body: JSON.stringify({
-            nickname: nickname.trim(),
+
+            nickname: nickname,
 
             favorite_pokemon:
-              favoritePokemon.trim() || null,
+              favoritePokemon || null,
 
             language:
-              language.trim() || null,
+              language || null,
 
             introduction:
-              introduction.trim() || null,
-          } satisfies UserUpdate),
+              introduction || null,
+          }),
         }
       );
 
 
-      // FastAPIからJSONを取得する
+      // FastAPIから返されたJSON
       const data: UpdateResponse =
         await response.json();
 
 
-      // 更新に失敗した場合
+      // 更新失敗
       if (!response.ok) {
 
         setMessage(
@@ -278,64 +254,66 @@ function ProfilePage() {
       );
 
 
-      // 編集モードを終了する
+      // 編集モードを終了
       setIsEditing(false);
 
 
-      // 最新のプロフィールを取得する
+      // 最新プロフィールを再取得
       await getMyProfile();
 
     } catch (error) {
 
-      // 通信エラーなどをコンソールに表示
+      // 通信エラー
       console.error(error);
 
       setMessage(
         "通信エラーが発生しました"
       );
+
+    } finally {
+
+      // 保存中を解除
+      setIsSaving(false);
     }
   };
 
 
-  // 編集をキャンセルする
+  // 編集をキャンセルする処理
   const handleCancel = (): void => {
 
-    // ユーザー情報が存在する場合
+    // 現在保存されているプロフィールの値に戻す
     if (user) {
 
-      // 編集前の値に戻す
       setNickname(
         user.nickname
       );
 
       setFavoritePokemon(
-        user.favorite_pokemon ?? ""
+        user.favorite_pokemon || ""
       );
 
       setLanguage(
-        user.language ?? ""
+        user.language || ""
       );
 
       setIntroduction(
-        user.introduction ?? ""
+        user.introduction || ""
       );
     }
 
 
-    // 編集モードを終了する
+    // 編集モード終了
     setIsEditing(false);
 
-
-    // メッセージを消す
+    // メッセージをクリア
     setMessage("");
   };
 
 
-  // 画面表示
   return (
     <div>
 
-      {/* アプリタイトル */}
+      {/* アプリのタイトル */}
       <h1>PokeMeet</h1>
 
 
@@ -349,16 +327,14 @@ function ProfilePage() {
       )}
 
 
-      {/* ユーザー情報が取得できている場合 */}
+      {/* プロフィールが取得できた場合 */}
       {user && (
 
         <div>
 
-          {/* =========================
-              表示モード
-              ========================= */}
-
+          {/* 表示モード */}
           {!isEditing && (
+
             <div>
 
               <h3>
@@ -373,22 +349,19 @@ function ProfilePage() {
 
               <p>
                 好きなポケモン：
-                {user.favorite_pokemon ||
-                  "未設定"}
+                {user.favorite_pokemon || "未設定"}
               </p>
 
 
               <p>
                 言語：
-                {user.language ||
-                  "未設定"}
+                {user.language || "未設定"}
               </p>
 
 
               <p>
                 自己紹介：
-                {user.introduction ||
-                  "未設定"}
+                {user.introduction || "未設定"}
               </p>
 
 
@@ -405,11 +378,9 @@ function ProfilePage() {
           )}
 
 
-          {/* =========================
-              編集モード
-              ========================= */}
-
+          {/* 編集モード */}
           {isEditing && (
+
             <div>
 
               <h3>
@@ -519,14 +490,18 @@ function ProfilePage() {
               {/* 保存ボタン */}
               <button
                 onClick={handleUpdate}
+                disabled={isSaving}
               >
-                保存する
+                {isSaving
+                  ? "保存中..."
+                  : "保存する"}
               </button>
 
 
               {/* キャンセルボタン */}
               <button
                 onClick={handleCancel}
+                disabled={isSaving}
               >
                 キャンセル
               </button>
