@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from pwdlib import PasswordHash
 
 from app.database import engine
@@ -88,6 +89,9 @@ def get_user(user_id: int):
             )
 
         # ユーザー情報を返す
+        #
+        # login_idやpassword_hashは
+        # 他のユーザーには返さない。
         return {
             "id": user.id,
             "nickname": user.nickname,
@@ -111,51 +115,73 @@ def create_user(user: UserCreate):
     # MySQLへ接続する
     with engine.connect() as connection:
 
-        # ユーザー情報をDBへ登録する
-        #
-        # login_idとnicknameを別々のカラムへ保存する。
-        connection.execute(
-            text("""
-                INSERT INTO users (
-                    login_id,
-                    nickname,
-                    password_hash,
-                    favorite_pokemon,
-                    language,
-                    introduction
+        try:
+
+            # ユーザー情報をDBへ登録する
+            #
+            # login_idとnicknameを別々に保存する。
+            connection.execute(
+                text("""
+                    INSERT INTO users (
+                        login_id,
+                        nickname,
+                        password_hash,
+                        favorite_pokemon,
+                        language,
+                        introduction
+                    )
+                    VALUES (
+                        :login_id,
+                        :nickname,
+                        :password_hash,
+                        :favorite_pokemon,
+                        :language,
+                        :introduction
+                    )
+                """),
+                {
+                    # ログインに使用するID
+                    "login_id": user.login_id,
+
+                    # 他のユーザーに表示する名前
+                    "nickname": user.nickname,
+
+                    # ハッシュ化したパスワード
+                    "password_hash": hashed_password,
+
+                    # 好きなポケモン
+                    "favorite_pokemon":
+                        user.favorite_pokemon,
+
+                    # 使用する言語
+                    "language": user.language,
+
+                    # 自己紹介
+                    "introduction": user.introduction
+                }
+            )
+
+            # INSERTを確定する
+            connection.commit()
+
+        except IntegrityError as error:
+
+            # DBの変更を取り消す
+            connection.rollback()
+
+            # login_idのUNIQUE制約違反の場合
+            if "uq_users_login_id" in str(error.orig):
+
+                raise HTTPException(
+                    status_code=400,
+                    detail="このログインIDはすでに使用されています"
                 )
-                VALUES (
-                    :login_id,
-                    :nickname,
-                    :password_hash,
-                    :favorite_pokemon,
-                    :language,
-                    :introduction
-                )
-            """),
-            {
-                # ログインに使用するID
-                "login_id": user.login_id,
 
-                # 画面に表示する名前
-                "nickname": user.nickname,
-
-                # ハッシュ化したパスワード
-                "password_hash": hashed_password,
-
-                # 好きなポケモン
-                "favorite_pokemon": user.favorite_pokemon,
-
-                # 使用する言語
-                "language": user.language,
-
-                # 自己紹介
-                "introduction": user.introduction
-            }
-        )
-
-        # INSERTを確定する
-        connection.commit()
+            # その他のDBエラー
+            raise HTTPException(
+                status_code=500,
+                detail="ユーザー登録に失敗しました"
+            )
 
     return {
         "message": "ユーザーを登録しました"
