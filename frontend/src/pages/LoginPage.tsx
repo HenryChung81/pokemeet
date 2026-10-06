@@ -12,13 +12,16 @@ import { useNavigate } from "react-router-dom";
 interface LoginResponse {
 
   // ログイン成功時にFastAPIから返されるJWT
-  access_token: string;
+  access_token?: string;
 
   // トークンの種類
-  token_type: string;
+  token_type?: string;
 
   // ログイン成功メッセージ
-  message: string;
+  message?: string;
+
+  // FastAPIのエラーメッセージ
+  detail?: string;
 }
 
 
@@ -30,8 +33,10 @@ function LoginPage() {
   // loginIdにはユーザーが入力したログインIDが入る
   const [loginId, setLoginId] = useState("");
 
+
   // パスワードを管理するstate
   const [password, setPassword] = useState("");
+
 
   // ログイン結果などのメッセージを管理するstate
   const [message, setMessage] = useState("");
@@ -68,7 +73,8 @@ function LoginPage() {
 
 
       // FastAPIから返ってきたJSONを取得する
-      const data: LoginResponse = await response.json();
+      const data: LoginResponse =
+        await response.json();
 
 
       // HTTPステータスが200番台ではない場合
@@ -78,9 +84,12 @@ function LoginPage() {
       // などの場合
       if (!response.ok) {
 
-        // FastAPIから返されたエラーメッセージを表示
+        // FastAPIのdetailに入っている
+        // エラーメッセージを表示する
         setMessage(
-          data.message || "ログインに失敗しました"
+          data.detail ||
+          data.message ||
+          "ログインに失敗しました"
         );
 
         return;
@@ -91,10 +100,14 @@ function LoginPage() {
       //
       // FastAPIから受け取ったJWTを
       // ブラウザのlocalStorageに保存する
-      localStorage.setItem(
-        "access_token",
-        data.access_token
-      );
+      if (data.access_token) {
+
+        localStorage.setItem(
+          "access_token",
+          data.access_token
+        );
+
+      }
 
 
       // ログイン成功後、
@@ -120,6 +133,7 @@ function LoginPage() {
 
       {/* アプリのタイトル */}
       <h1>PokeMeet</h1>
+
 
       {/* ページのタイトル */}
       <h2>ログイン</h2>
