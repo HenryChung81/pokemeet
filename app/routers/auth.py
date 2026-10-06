@@ -110,7 +110,7 @@ def login(login_data: LoginRequest):
     # MySQLへ接続
     with engine.connect() as connection:
 
-        # nicknameでユーザーを検索
+        # login_idでユーザーを検索
         result = connection.execute(
             text("""
                 SELECT
@@ -118,10 +118,10 @@ def login(login_data: LoginRequest):
                     nickname,
                     password_hash
                 FROM users
-                WHERE nickname = :nickname
+                WHERE login_id = :login_id
             """),
             {
-                "nickname": login_data.nickname
+                "login_id": login_data.login_id
             }
         )
 
@@ -132,7 +132,7 @@ def login(login_data: LoginRequest):
         if user is None:
             raise HTTPException(
                 status_code=401,
-                detail="ユーザー名またはパスワードが違います"
+                detail="ログインIDまたはパスワードが違います"
             )
 
         # パスワードを検証
@@ -145,7 +145,7 @@ def login(login_data: LoginRequest):
         if not password_ok:
             raise HTTPException(
                 status_code=401,
-                detail="ユーザー名またはパスワードが違います"
+                detail="ログインIDまたはパスワードが違います"
             )
 
         # ログイン成功したのでJWTを作成

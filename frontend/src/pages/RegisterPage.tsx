@@ -20,7 +20,15 @@ interface RegisterResponse {
 // ユーザー登録画面
 function RegisterPage() {
 
+  // ログインIDを管理するstate
+  //
+  // ログインするときに使用するID
+  const [loginId, setLoginId] = useState("");
+
+
   // ニックネームを管理するstate
+  //
+  // 他のユーザーに表示する名前
   const [nickname, setNickname] = useState("");
 
 
@@ -70,12 +78,23 @@ function RegisterPage() {
 
           // 入力されたユーザー情報をJSONに変換する
           body: JSON.stringify({
+
+            // ログインに使用するID
+            login_id: loginId,
+
+            // 他のユーザーに表示する名前
             nickname: nickname,
+
+            // パスワード
             password: password,
+
+            // 空文字ならnullとして送信する
             favorite_pokemon:
               favoritePokemon || null,
+
             language:
               language || null,
+
             introduction:
               introduction || null,
           }),
@@ -134,6 +153,29 @@ function RegisterPage() {
 
       {/* ページタイトル */}
       <h2>新規登録</h2>
+
+
+      {/* ログインID */}
+      <div>
+
+        <label>
+          ログインID
+        </label>
+
+        <br />
+
+        <input
+          type="text"
+          value={loginId}
+          onChange={(event) =>
+            setLoginId(event.target.value)
+          }
+        />
+
+      </div>
+
+
+      <br />
 
 
       {/* ニックネーム */}

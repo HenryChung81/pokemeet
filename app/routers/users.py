@@ -22,6 +22,9 @@ def get_users():
     with engine.connect() as connection:
 
         # usersテーブルから必要な項目を取得する
+        #
+        # login_idはログイン専用の情報なので、
+        # 他のユーザーには表示しない。
         result = connection.execute(
             text("""
                 SELECT
@@ -99,6 +102,8 @@ def get_user(user_id: int):
 def create_user(user: UserCreate):
 
     # 入力されたパスワードをハッシュ化する
+    #
+    # DBには平文のパスワードを保存しない。
     hashed_password = password_hash.hash(
         user.password
     )
@@ -107,9 +112,12 @@ def create_user(user: UserCreate):
     with engine.connect() as connection:
 
         # ユーザー情報をDBへ登録する
+        #
+        # login_idとnicknameを別々のカラムへ保存する。
         connection.execute(
             text("""
                 INSERT INTO users (
+                    login_id,
                     nickname,
                     password_hash,
                     favorite_pokemon,
@@ -117,6 +125,7 @@ def create_user(user: UserCreate):
                     introduction
                 )
                 VALUES (
+                    :login_id,
                     :nickname,
                     :password_hash,
                     :favorite_pokemon,
@@ -125,10 +134,22 @@ def create_user(user: UserCreate):
                 )
             """),
             {
+                # ログインに使用するID
+                "login_id": user.login_id,
+
+                # 画面に表示する名前
                 "nickname": user.nickname,
+
+                # ハッシュ化したパスワード
                 "password_hash": hashed_password,
+
+                # 好きなポケモン
                 "favorite_pokemon": user.favorite_pokemon,
+
+                # 使用する言語
                 "language": user.language,
+
+                # 自己紹介
                 "introduction": user.introduction
             }
         )

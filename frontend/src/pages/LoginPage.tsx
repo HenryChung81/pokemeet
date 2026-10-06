@@ -1,105 +1,96 @@
 // Reactの状態管理機能を読み込む
 import { useState } from "react";
 
-// React Routerから、
-// 別のページへ移動するための機能を読み込む
+// React Routerから、別のページへ移動するための機能を読み込む
 import { useNavigate } from "react-router-dom";
 
 
 // FastAPIのログインAPIが返してくるデータの型
+//
+// TypeScriptでは「このデータには何が入っているか」を
+// あらかじめ定義しておくことができる
 interface LoginResponse {
 
-  // ログイン成功時に返されるJWT
-  access_token?: string;
+  // ログイン成功時にFastAPIから返されるJWT
+  access_token: string;
 
   // トークンの種類
-  token_type?: string;
+  token_type: string;
 
   // ログイン成功メッセージ
-  message?: string;
-
-  // FastAPIでエラーが発生した場合
-  detail?: string;
+  message: string;
 }
 
 
 // ログイン画面のコンポーネント
 function LoginPage() {
 
-  // ニックネームを管理するstate
-  const [nickname, setNickname] =
-    useState("");
-
+  // ログインIDを管理するstate
+  //
+  // loginIdにはユーザーが入力したログインIDが入る
+  const [loginId, setLoginId] = useState("");
 
   // パスワードを管理するstate
-  const [password, setPassword] =
-    useState("");
+  const [password, setPassword] = useState("");
+
+  // ログイン結果などのメッセージを管理するstate
+  const [message, setMessage] = useState("");
 
 
-  // ログイン結果などのメッセージ
-  const [message, setMessage] =
-    useState("");
-
-
-  // ページ移動に使う
+  // React Routerを使って別ページへ移動するための関数
   const navigate = useNavigate();
 
 
-  // ログインボタンを押したときに実行する
+  // ログインボタンを押したときに実行する関数
   const handleLogin = async (): Promise<void> => {
 
     try {
 
-      // FastAPIのログインAPIへアクセスする
+      // FastAPIのログインAPIへリクエストを送る
       const response = await fetch(
         "http://127.0.0.1:8000/login",
         {
-          // ログインなのでPOSTを使用する
+          // HTTPメソッドはPOST
           method: "POST",
 
-          // JSON形式で送信する
+          // JSON形式でデータを送ることを指定
           headers: {
             "Content-Type": "application/json",
           },
 
-          // ニックネームとパスワードを送信する
+          // login_idとpasswordをJSONに変換して送る
           body: JSON.stringify({
-            nickname: nickname,
+            login_id: loginId,
             password: password,
           }),
         }
       );
 
 
-      // FastAPIから返されたJSONを取得する
-      const data: LoginResponse =
-        await response.json();
+      // FastAPIから返ってきたJSONを取得する
+      const data: LoginResponse = await response.json();
 
 
-      // ログインに失敗した場合
+      // HTTPステータスが200番台ではない場合
+      //
+      // 例えば、
+      // 401 Unauthorized
+      // などの場合
       if (!response.ok) {
 
+        // FastAPIから返されたエラーメッセージを表示
         setMessage(
-          data.detail ||
-          "ログインに失敗しました"
+          data.message || "ログインに失敗しました"
         );
 
         return;
       }
 
 
-      // JWTが存在しない場合
-      if (!data.access_token) {
-
-        setMessage(
-          "アクセストークンを取得できませんでした"
-        );
-
-        return;
-      }
-
-
-      // JWTをlocalStorageに保存する
+      // ログイン成功
+      //
+      // FastAPIから受け取ったJWTを
+      // ブラウザのlocalStorageに保存する
       localStorage.setItem(
         "access_token",
         data.access_token
@@ -115,6 +106,7 @@ function LoginPage() {
       // 通信エラーなどが発生した場合
       console.error(error);
 
+      // ユーザーにエラーメッセージを表示
       setMessage(
         "サーバーとの通信に失敗しました"
       );
@@ -129,59 +121,48 @@ function LoginPage() {
       {/* アプリのタイトル */}
       <h1>PokeMeet</h1>
 
-
-      {/* ページタイトル */}
+      {/* ページのタイトル */}
       <h2>ログイン</h2>
 
 
-      {/* ニックネーム入力欄 */}
+      {/* ログインID入力欄 */}
       <div>
 
-        <label>
-          ニックネーム
-        </label>
-
-        <br />
+        <label>ログインID</label>
 
         <input
           type="text"
-          value={nickname}
+
+          // inputの現在の値
+          value={loginId}
+
+          // 入力内容が変更されたらloginIdを更新する
           onChange={(event) =>
-            setNickname(
-              event.target.value
-            )
+            setLoginId(event.target.value)
           }
         />
 
       </div>
-
-
-      <br />
 
 
       {/* パスワード入力欄 */}
       <div>
 
-        <label>
-          パスワード
-        </label>
-
-        <br />
+        <label>パスワード</label>
 
         <input
           type="password"
+
+          // inputの現在の値
           value={password}
+
+          // 入力内容が変更されたらpasswordを更新する
           onChange={(event) =>
-            setPassword(
-              event.target.value
-            )
+            setPassword(event.target.value)
           }
         />
 
       </div>
-
-
-      <br />
 
 
       {/* ログインボタン */}
@@ -190,15 +171,7 @@ function LoginPage() {
       </button>
 
 
-      {/* 新規登録画面へ移動するボタン */}
-      <button
-        onClick={() => navigate("/register")}
-      >
-        新規登録
-      </button>
-
-
-      {/* ログイン結果やエラーメッセージ */}
+      {/* ログイン結果やエラーメッセージを表示 */}
       <p>{message}</p>
 
     </div>
