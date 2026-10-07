@@ -8,6 +8,9 @@ import { Navigate } from "react-router-dom";
 // 「React画面として表示できるもの」を表す型。
 import type { ReactNode } from "react";
 
+// PokeMeet共通ヘッダー
+import Header from "./Header";
+
 
 // ProtectedRouteに渡されるデータの型
 interface ProtectedRouteProps {
@@ -46,8 +49,14 @@ function ProtectedRoute({
 
 
   // JWTが存在する場合は、
-  // 本来表示するページをそのまま表示する。
-  return <>{children}</>;
+  // 共通ヘッダーと本来のページを表示する。
+  return (
+    <>
+      <Header />
+
+      {children}
+    </>
+  );
 }
 
 
