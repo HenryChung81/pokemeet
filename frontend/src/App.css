@@ -1539,3 +1539,39 @@
   }
 
 }
+
+/* スマホ用ヘッダー調整 */
+@media (max-width: 700px) {
+  .app-header-inner {
+    width: calc(100% - 12px);
+    gap: 4px;
+  }
+
+  .app-logo {
+    gap: 7px;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .app-logo-icon {
+    width: 29px;
+    height: 29px;
+  }
+
+  .app-nav {
+    gap: 0;
+    flex-shrink: 1;
+  }
+
+  .app-nav a,
+  .header-logout {
+    min-height: 36px;
+    padding: 0 4px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .header-logout {
+    margin-left: 2px;
+  }
+}
