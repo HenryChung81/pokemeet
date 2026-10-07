@@ -1,37 +1,51 @@
-/* =========================
-   共通ページ
-   ========================= */
+/* =========================================================
+   PokeMeet - App.css
+   ========================================================= */
+
+
+/* =========================================================
+   共通レイアウト
+   ========================================================= */
 
 .page {
-  width: 100%;
-  min-height: calc(100vh - 65px);
-
-  padding: 42px 24px 60px;
-
-  background:
-    radial-gradient(
-      circle at 10% 15%,
-      rgba(147, 197, 253, 0.12),
-      transparent 28%
-    ),
-    radial-gradient(
-      circle at 90% 30%,
-      rgba(250, 204, 21, 0.08),
-      transparent 25%
-    ),
-    var(--bg);
+  min-height: calc(100vh - 72px);
+  padding: 40px 20px 60px;
+  background: var(--bg);
 }
 
 .page-container {
-  width: 100%;
-  max-width: 1100px;
-
+  width: min(1100px, 100%);
   margin: 0 auto;
 }
 
-/* =========================
-   ヘッダー
-   ========================= */
+.page-header {
+  margin-bottom: 30px;
+}
+
+.page-title-area {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.page-title-ball {
+  display: none;
+}
+
+.page-title {
+  margin-bottom: 4px;
+}
+
+.page-description {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 15px;
+}
+
+
+/* =========================================================
+   Header
+   ========================================================= */
 
 .app-header {
   position: sticky;
@@ -42,40 +56,36 @@
 
   background: #ffffff;
 
-  border-bottom: 1px solid var(--border);
-
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .app-header-inner {
-  width: 100%;
-  max-width: 1100px;
-
-  min-height: 64px;
+  width: min(1100px, calc(100% - 40px));
+  min-height: 72px;
 
   margin: 0 auto;
-
-  padding: 0 24px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
+
+  gap: 24px;
 }
 
-/* =========================
-   PokeMeetロゴ
-   ========================= */
-
 .app-logo {
-  display: flex;
+  display: inline-flex;
   align-items: center;
 
-  gap: 9px;
+  gap: 10px;
 
-  color: #111827;
+  color: var(--text-dark);
 
   text-decoration: none;
+
+  font-size: 23px;
+  font-weight: 800;
+
+  white-space: nowrap;
 }
 
 .app-logo-icon {
@@ -86,37 +96,18 @@
 
   flex-shrink: 0;
 
+  border: 3px solid #1f2937;
+  border-radius: 50%;
+
   background: linear-gradient(
     to bottom,
     #ef4444 0%,
-    #ef4444 50%,
-    #ffffff 50%,
+    #ef4444 43%,
+    #1f2937 43%,
+    #1f2937 57%,
+    #ffffff 57%,
     #ffffff 100%
   );
-
-  border: 3px solid #111827;
-
-  border-radius: 50%;
-
-  overflow: hidden;
-}
-
-.app-logo-icon::before {
-  content: "";
-
-  position: absolute;
-
-  left: 0;
-  right: 0;
-  top: 50%;
-
-  height: 4px;
-
-  background: #111827;
-
-  transform: translateY(-50%);
-
-  z-index: 2;
 }
 
 .app-logo-icon::after {
@@ -124,36 +115,23 @@
 
   position: absolute;
 
-  left: 50%;
   top: 50%;
+  left: 50%;
 
-  width: 10px;
-  height: 10px;
-
-  background: #ffffff;
-
-  border: 3px solid #111827;
-
-  border-radius: 50%;
+  width: 11px;
+  height: 11px;
 
   transform: translate(-50%, -50%);
 
-  z-index: 3;
+  border: 3px solid #1f2937;
+  border-radius: 50%;
+
+  background: #ffffff;
 }
 
 .app-logo-text {
-  color: #111827;
-
-  font-size: 22px;
-
-  font-weight: 800;
-
-  letter-spacing: -0.5px;
+  line-height: 1;
 }
-
-/* =========================
-   ナビゲーション
-   ========================= */
 
 .app-nav {
   display: flex;
@@ -163,54 +141,56 @@
 }
 
 .app-nav a {
-  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
 
-  color: var(--text);
+  min-height: 40px;
+
+  padding: 0 14px;
+
+  border-radius: 12px;
+
+  color: #374151;
 
   text-decoration: none;
 
-  border-radius: 10px;
-
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
 
   transition:
     background 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
+    color 0.2s ease;
 }
 
 .app-nav a:hover {
-  background: #f3f4f6;
-
-  transform: translateY(-1px);
+  color: var(--primary);
+  background: #eff6ff;
 }
 
 .app-nav a.active {
   color: var(--primary);
-
   background: #eff6ff;
 }
 
-/* =========================
-   ログアウト
-   ========================= */
-
 .header-logout {
-  padding: 8px 12px;
+  min-height: 40px;
 
-  border: none;
+  margin-left: 4px;
+  padding: 0 14px;
 
-  border-radius: 10px;
+  border: 0;
+  border-radius: 12px;
 
-  background: transparent;
+  background: #f3f4f6;
 
-  color: var(--text);
+  color: #374151;
 
-  font-family: inherit;
+  font-family: var(--sans);
 
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
+
+  cursor: pointer;
 
   transition:
     background 0.2s ease,
@@ -218,472 +198,17 @@
 }
 
 .header-logout:hover {
-  background: #fef2f2;
-
-  color: var(--danger);
+  background: #fee2e2;
+  color: #dc2626;
 }
 
-/* =========================
-   ページタイトル
-   ========================= */
 
-.page-header {
-  margin-bottom: 30px;
-}
-
-.page-title-area {
-  display: flex;
-
-  align-items: center;
-
-  gap: 14px;
-}
-
-.page-title-ball {
-  position: relative;
-
-  width: 42px;
-  height: 42px;
-
-  flex-shrink: 0;
-
-  background: linear-gradient(
-    to bottom,
-    #ef4444 0%,
-    #ef4444 48%,
-    #111827 48%,
-    #111827 56%,
-    #ffffff 56%,
-    #ffffff 100%
-  );
-
-  border: 3px solid #111827;
-
-  border-radius: 50%;
-
-  box-shadow:
-    0 4px 10px rgba(37, 99, 235, 0.15);
-}
-
-.page-title-ball::after {
-  content: "";
-
-  position: absolute;
-
-  left: 50%;
-  top: 52%;
-
-  width: 10px;
-  height: 10px;
-
-  background: #ffffff;
-
-  border: 3px solid #111827;
-
-  border-radius: 50%;
-
-  transform: translate(-50%, -50%);
-}
-
-.page-title {
-  margin: 0 0 5px;
-
-  color: var(--text-dark);
-
-  font-size: 32px;
-
-  font-weight: 800;
-
-  letter-spacing: -0.8px;
-}
-
-.page-description {
-  margin: 0;
-
-  color: var(--text-light);
-
-  font-size: 15px;
-}
-
-/* =========================
-   共通カード
-   ========================= */
-
-.card {
-  background: var(--card-bg);
-
-  border: 1px solid var(--border);
-
-  border-radius: var(--radius);
-
-  box-shadow: var(--shadow);
-}
-
-.card:hover {
-  box-shadow: var(--shadow-hover);
-}
-
-/* =========================
-   交流会一覧
-   ========================= */
-
-.event-grid {
-  display: grid;
-
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
-
-  gap: 26px;
-
-  align-items: start;
-}
-
-/* =========================
-   交流会カード
-   ========================= */
-
-.event-card {
-  position: relative;
-
-  width: 100%;
-
-  overflow: hidden;
-
-  background: #ffffff;
-
-  border: 1px solid rgba(229, 231, 235, 0.9);
-
-  border-radius: 18px;
-
-  box-shadow:
-    0 5px 18px rgba(15, 23, 42, 0.07);
-
-  align-self: start;
-
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.event-card:hover {
-  transform: translateY(-4px);
-
-  box-shadow:
-    0 12px 30px rgba(15, 23, 42, 0.11);
-}
-
-/* =========================
-   都市ごとのアクセント
-   ========================= */
-
-.city-ikebukuro {
-  --city-main: #ec4899;
-  --city-light: #fdf2f8;
-  --city-border: #f9a8d4;
-}
-
-.city-shinjuku {
-  --city-main: #2563eb;
-  --city-light: #eff6ff;
-  --city-border: #93c5fd;
-}
-
-.city-shibuya {
-  --city-main: #f59e0b;
-  --city-light: #fffbeb;
-  --city-border: #fcd34d;
-}
-
-.city-ueno {
-  --city-main: #16a34a;
-  --city-light: #f0fdf4;
-  --city-border: #86efac;
-}
-
-.city-nagoya {
-  --city-main: #7c3aed;
-  --city-light: #f5f3ff;
-  --city-border: #c4b5fd;
-}
-
-.city-osaka {
-  --city-main: #f97316;
-  --city-light: #fff7ed;
-  --city-border: #fdba74;
-}
-
-.city-akihabara {
-  --city-main: #0891b2;
-  --city-light: #ecfeff;
-  --city-border: #67e8f9;
-}
-
-.city-nakano {
-  --city-main: #db2777;
-  --city-light: #fdf2f8;
-  --city-border: #f9a8d4;
-}
-
-.city-default {
-  --city-main: #2563eb;
-  --city-light: #eff6ff;
-  --city-border: #93c5fd;
-}
-
-/* =========================
-   都市イラスト
-   ========================= */
-
-.event-city-image {
-  position: relative;
-
-  width: 100%;
-
-  overflow: hidden;
-
-  background: #ffffff;
-
-  border-bottom: 1px solid var(--city-border);
-}
-
-.event-city-image img {
-  display: block;
-
-  width: 100%;
-  height: auto;
-
-  /*
-    元画像をそのまま表示。
-    絵を切らない。
-  */
-  object-fit: contain;
-}
-
-/* =========================
-   都市ラベル
-   ========================= */
-
-.city-label {
-  position: absolute;
-
-  left: 16px;
-  bottom: 14px;
-
-  display: inline-flex;
-
-  align-items: center;
-
-  gap: 7px;
-
-  padding: 7px 13px;
-
-  color: #ffffff;
-
-  background: var(--city-main);
-
-  border: 2px solid rgba(255, 255, 255, 0.9);
-
-  border-radius: 999px;
-
-  box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.15);
-
-  font-size: 13px;
-  font-weight: 800;
-}
-
-/* =========================
-   小さいモンスターボール
-   ========================= */
-
-.city-label-ball,
-.button-ball {
-  position: relative;
-
-  display: inline-block;
-
-  flex-shrink: 0;
-
-  background: linear-gradient(
-    to bottom,
-    #ef4444 0%,
-    #ef4444 45%,
-    #111827 45%,
-    #111827 58%,
-    #ffffff 58%,
-    #ffffff 100%
-  );
-
-  border: 2px solid #111827;
-
-  border-radius: 50%;
-}
-
-.city-label-ball {
-  width: 19px;
-  height: 19px;
-}
-
-.city-label-ball::after,
-.button-ball::after {
-  content: "";
-
-  position: absolute;
-
-  left: 50%;
-  top: 52%;
-
-  background: #ffffff;
-
-  border: 2px solid #111827;
-
-  border-radius: 50%;
-
-  transform: translate(-50%, -50%);
-}
-
-.city-label-ball::after {
-  width: 5px;
-  height: 5px;
-}
-
-/* =========================
-   カード本文
-   ========================= */
-
-.event-card-content {
-  position: relative;
-
-  padding: 22px 24px 24px;
-
-  background:
-    radial-gradient(
-      circle at 100% 100%,
-      var(--city-light),
-      transparent 38%
-    ),
-    #ffffff;
-}
-
-.event-card-content::after {
-  content: "";
-
-  position: absolute;
-
-  right: 18px;
-  bottom: 14px;
-
-  width: 72px;
-  height: 72px;
-
-  border: 7px solid var(--city-main);
-
-  border-radius: 50%;
-
-  opacity: 0.055;
-
-  pointer-events: none;
-}
-
-.event-card-title {
-  position: relative;
-  z-index: 1;
-
-  margin: 0 0 16px;
-
-  color: var(--text-dark);
-
-  font-size: 21px;
-
-  font-weight: 800;
-
-  line-height: 1.4;
-
-  letter-spacing: -0.3px;
-}
-
-/* =========================
-   イベント情報チップ
-   ========================= */
-
-.event-info {
-  position: relative;
-  z-index: 1;
-
-  display: flex;
-
-  flex-wrap: wrap;
-
-  gap: 7px;
-
-  margin-bottom: 18px;
-}
-
-.event-info-chip {
-  display: inline-flex;
-
-  align-items: center;
-
-  gap: 5px;
-
-  min-height: 30px;
-
-  padding: 5px 10px;
-
-  color: var(--text);
-
-  background: rgba(255, 255, 255, 0.78);
-
-  border: 1px solid var(--city-border);
-
-  border-radius: 999px;
-
-  font-size: 12px;
-
-  font-weight: 600;
-}
-
-.event-info-icon {
-  font-size: 14px;
-
-  line-height: 1;
-}
-
-/* =========================
-   イベント説明
-   ========================= */
-
-.event-description {
-  position: relative;
-  z-index: 1;
-
-  margin: 0 0 22px;
-
-  color: var(--text-light);
-
-  font-size: 14px;
-
-  line-height: 1.75;
-}
-
-/* =========================
-   詳細ボタン
-   ========================= */
-
-.event-button-area {
-  position: relative;
-  z-index: 2;
-
-  display: flex;
-
-  justify-content: flex-end;
-
-  margin-top: 4px;
-}
+/* =========================================================
+   共通ボタン
+   ========================================================= */
 
 .button {
   display: inline-flex;
-
   align-items: center;
   justify-content: center;
 
@@ -691,257 +216,1298 @@
 
   min-height: 44px;
 
-  padding: 0 18px 0 13px;
+  padding: 0 18px;
 
-  border: none;
-
+  border: 0;
   border-radius: 999px;
 
-  font-family: inherit;
+  font-family: var(--sans);
 
   font-size: 14px;
-
   font-weight: 800;
+
+  text-decoration: none;
 
   cursor: pointer;
 
   transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease,
-    background 0.18s ease;
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
 }
 
-.button:active {
-  transform: translateY(1px);
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.button-primary {
+  background: #2563eb;
+  color: #ffffff;
+
+  box-shadow:
+    0 5px 14px rgba(37, 99, 235, 0.22);
+}
+
+.button-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+
+  box-shadow:
+    0 7px 18px rgba(37, 99, 235, 0.28);
+}
+
+.button-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.button-secondary:hover:not(:disabled) {
+  background: #e5e7eb;
 }
 
 .button:disabled {
   cursor: not-allowed;
-
   opacity: 0.6;
 }
 
-.button-primary {
-  color: #ffffff;
-
-  background: var(--city-main);
-
-  box-shadow:
-    0 5px 12px rgba(15, 23, 42, 0.12);
-}
-
-.button-primary:hover {
-  background: var(--city-main);
-
-  transform: translateY(-2px);
-
-  box-shadow:
-    0 8px 18px rgba(15, 23, 42, 0.17);
-}
-
 .button-ball {
-  width: 25px;
-  height: 25px;
+  position: relative;
 
-  border-width: 2px;
+  width: 19px;
+  height: 19px;
 
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+
+  border: 2px solid currentColor;
+  border-radius: 50%;
+
+  background: linear-gradient(
+    to bottom,
+    #ef4444 0%,
+    #ef4444 43%,
+    currentColor 43%,
+    currentColor 57%,
+    #ffffff 57%,
+    #ffffff 100%
+  );
 }
 
 .button-ball::after {
+  content: "";
+
+  position: absolute;
+
+  top: 50%;
+  left: 50%;
+
   width: 6px;
   height: 6px;
+
+  transform: translate(-50%, -50%);
+
+  border: 2px solid currentColor;
+  border-radius: 50%;
+
+  background: #ffffff;
 }
 
 .button-arrow {
   font-size: 17px;
-
   line-height: 1;
-
-  transition:
-    transform 0.18s ease;
 }
-
-.button-primary:hover .button-arrow {
-  transform: translateX(3px);
-}
-
-.button-secondary {
-  color: var(--text);
-
-  background: #f3f4f6;
-}
-
-.button-secondary:hover {
-  background: #e5e7eb;
-}
-
-.button-danger {
-  color: #ffffff;
-
-  background: var(--danger);
-}
-
-.button-danger:hover {
-  background: #dc2626;
-}
-
-/* =========================
-   メッセージ
-   ========================= */
-
-.message {
-  margin-bottom: 20px;
-
-  padding: 12px 16px;
-
-  border-radius: 10px;
-
-  background: #fef2f2;
-
-  color: #b91c1c;
-
-  font-size: 14px;
-}
-
-.empty-message {
-  padding: 48px 20px;
-
-  text-align: center;
-
-  color: var(--text-light);
-
-  background: #ffffff;
-
-  border: 1px dashed var(--border);
-
-  border-radius: var(--radius);
-}
-
-/* =========================
-   ページアクション
-   ========================= */
 
 .page-actions {
   display: flex;
-
   gap: 10px;
-
-  margin-top: 28px;
+  margin-top: 20px;
 }
 
-/* =========================
-   詳細画面
-   ========================= */
 
-.detail-card {
-  padding: 32px;
+/* =========================================================
+   メッセージ
+   ========================================================= */
+
+.message {
+  padding: 14px 18px;
+
+  border-radius: 12px;
+
+  background: #fef2f2;
+
+  color: #dc2626;
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+.empty-message {
+  padding: 50px 20px;
+
+  text-align: center;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
 
   background: #ffffff;
 
-  border: 1px solid var(--border);
-
-  border-radius: var(--radius);
-
-  box-shadow: var(--shadow);
+  color: var(--text-light);
 }
 
-.detail-title {
-  margin: 0 0 24px;
+
+/* =========================================================
+   交流会一覧
+   ========================================================= */
+
+.event-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 24px;
+}
+
+.event-card {
+  overflow: hidden;
+
+  border: 1px solid #e5e7eb;
+
+  border-top: 4px solid var(
+    --city-color,
+    #2563eb
+  );
+
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  box-shadow: var(--shadow);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.event-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+}
+
+
+/* =========================================================
+   一覧ページ画像
+   ========================================================= */
+
+.event-city-image {
+  position: relative;
+
+  width: 100%;
+
+  aspect-ratio: 4 / 3;
+
+  overflow: hidden;
+
+  background: #eef2f7;
+}
+
+.event-city-image img {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  object-position: center;
+}
+
+
+/* =========================================================
+   都市ラベル
+   ========================================================= */
+
+.city-label {
+  position: absolute;
+
+  left: 14px;
+  bottom: 12px;
+
+  z-index: 5;
+
+  display: inline-flex;
+  align-items: center;
+
+  gap: 7px;
+
+  padding: 6px 12px;
+
+  border: 2px solid #ffffff;
+
+  border-radius: 999px;
+
+  background: #2563eb;
+
+  color: #ffffff;
+
+  font-size: 13px;
+  font-weight: 800;
+
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.city-label-ball {
+  position: relative;
+
+  width: 15px;
+  height: 15px;
+
+  flex-shrink: 0;
+
+  border: 1.5px solid #1f2937;
+
+  border-radius: 50%;
+
+  background: linear-gradient(
+    to bottom,
+    #ef4444 0%,
+    #ef4444 43%,
+    #1f2937 43%,
+    #1f2937 57%,
+    #ffffff 57%,
+    #ffffff 100%
+  );
+}
+
+.city-label-ball::after {
+  content: "";
+
+  position: absolute;
+
+  top: 50%;
+  left: 50%;
+
+  width: 4px;
+  height: 4px;
+
+  transform: translate(-50%, -50%);
+
+  border: 1px solid #1f2937;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+}
+
+
+/* =========================================================
+   一覧カード本文
+   ========================================================= */
+
+.event-card-content {
+  padding: 24px;
+
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #f8fbff 100%
+  );
+}
+
+.event-card-title {
+  margin-bottom: 18px;
 
   color: var(--text-dark);
 
-  font-size: 28px;
+  font-size: 22px;
+
+  line-height: 1.4;
 
   font-weight: 800;
 }
 
-.detail-info {
+.event-info {
   display: flex;
 
   flex-direction: column;
 
-  gap: 14px;
-
-  margin-bottom: 28px;
+  gap: 8px;
 }
 
-.detail-info-row {
+.event-info-chip {
   display: flex;
+  align-items: center;
 
-  gap: 12px;
+  gap: 8px;
 
-  padding-bottom: 14px;
+  min-height: 34px;
 
-  border-bottom: 1px solid #f0f0f0;
+  padding: 6px 10px;
+
+  border-radius: 10px;
+
+  background: rgba(239, 246, 255, 0.75);
+
+  color: #374151;
+
+  font-size: 13px;
+
+  font-weight: 600;
 }
 
-.detail-label {
-  width: 110px;
+.event-info-icon {
+  width: 24px;
+  height: 24px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
 
   flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: #eff6ff;
+
+  font-size: 14px;
+}
+
+.event-description {
+  margin: 18px 0 0;
 
   color: var(--text-light);
 
   font-size: 14px;
 
+  line-height: 1.7;
+}
+
+.event-button-area {
+  display: flex;
+
+  justify-content: flex-end;
+
+  margin-top: 22px;
+}
+
+
+/* =========================================================
+   都市ごとのカラー
+   ========================================================= */
+
+.city-ikebukuro {
+  --city-color: #ef4444;
+  --city-light: #fef2f2;
+  --city-dark: #b91c1c;
+}
+
+.city-shinjuku {
+  --city-color: #2563eb;
+  --city-light: #eff6ff;
+  --city-dark: #1d4ed8;
+}
+
+.city-shibuya {
+  --city-color: #f59e0b;
+  --city-light: #fffbeb;
+  --city-dark: #d97706;
+}
+
+.city-ueno {
+  --city-color: #22c55e;
+  --city-light: #f0fdf4;
+  --city-dark: #15803d;
+}
+
+.city-nagoya {
+  --city-color: #8b5cf6;
+  --city-light: #f5f3ff;
+  --city-dark: #6d28d9;
+}
+
+.city-osaka {
+  --city-color: #f97316;
+  --city-light: #fff7ed;
+  --city-dark: #c2410c;
+}
+
+.city-akihabara {
+  --city-color: #ec4899;
+  --city-light: #fdf2f8;
+  --city-dark: #be185d;
+}
+
+.city-nakano {
+  --city-color: #14b8a6;
+  --city-light: #f0fdfa;
+  --city-dark: #0f766e;
+}
+
+.city-default {
+  --city-color: #2563eb;
+  --city-light: #eff6ff;
+  --city-dark: #1d4ed8;
+}
+
+.event-card .event-info-chip {
+  background: var(
+    --city-light,
+    #eff6ff
+  );
+}
+
+.event-card .event-info-icon {
+  background: #ffffff;
+}
+
+.event-card .city-label {
+  background: var(
+    --city-color,
+    #2563eb
+  );
+}
+
+
+/* =========================================================
+   詳細ページ
+   ========================================================= */
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 40px;
+
+  margin-bottom: 18px;
+
+  padding: 0 15px;
+
+  border: 0;
+
+  border-radius: 999px;
+
+  background: #ffffff;
+
+  color: #374151;
+
+  font-family: var(--sans);
+
+  font-size: 14px;
+
+  font-weight: 800;
+
+  box-shadow: var(--shadow);
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.back-link:hover {
+  background: #eff6ff;
+
+  color: #2563eb;
+
+  transform: translateX(-2px);
+}
+
+.event-detail-card {
+  overflow: hidden;
+
+  border: 1px solid #e5e7eb;
+
+  border-top: 4px solid var(
+    --city-color,
+    #2563eb
+  );
+
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  box-shadow: var(--shadow);
+}
+
+
+/* =========================================================
+   詳細ページ：都市テーマ画像エリア
+   ========================================================= */
+
+/*
+  ポイント：
+
+  ・画像は引き伸ばさない
+  ・ぼかし背景は使わない
+  ・左右を都市カラーで埋める
+  ・円形のデザインを配置
+  ・小さなドット模様を配置
+*/
+
+.event-detail-image {
+  position: relative;
+
+  width: 100%;
+  height: 240px;
+
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background-color: var(
+    --city-color,
+    #2563eb
+  );
+
+  /*
+    小さなドット模様
+  */
+  background-image:
+    radial-gradient(
+      rgba(255, 255, 255, 0.22) 2px,
+      transparent 2px
+    );
+
+  background-size: 24px 24px;
+
+  background-position:
+    left 22px top 18px;
+}
+
+
+/*
+  左側の大きな円形デザイン
+*/
+
+.event-detail-image::before {
+  content: "";
+
+  position: absolute;
+
+  left: -85px;
+  top: -75px;
+
+  width: 250px;
+  height: 250px;
+
+  border: 34px solid rgba(
+    255,
+    255,
+    255,
+    0.12
+  );
+
+  border-radius: 50%;
+
+  box-shadow:
+    inset 0 0 0 25px rgba(
+      255,
+      255,
+      255,
+      0.04
+    );
+
+  z-index: 1;
+}
+
+
+/*
+  右側の大きな円形デザイン
+*/
+
+.event-detail-image::after {
+  content: "";
+
+  position: absolute;
+
+  right: -90px;
+  bottom: -105px;
+
+  width: 260px;
+  height: 260px;
+
+  border: 34px solid rgba(
+    255,
+    255,
+    255,
+    0.12
+  );
+
+  border-radius: 50%;
+
+  z-index: 1;
+}
+
+
+/*
+  中央の街イラスト
+
+  元画像の縦横比を維持する。
+*/
+
+.event-detail-image img {
+  position: relative;
+
+  z-index: 3;
+
+  display: block;
+
+  width: auto;
+  height: 280px;
+
+  max-width: 100%;
+
+  object-fit: contain;
+  object-position: center;
+
+  flex-shrink: 0;
+}
+
+
+/*
+  街ラベル
+*/
+
+.event-detail-image .city-label {
+  z-index: 5;
+
+  background: var(
+    --city-color,
+    #2563eb
+  );
+}
+
+
+/* =========================================================
+   詳細ページ：都市ごとの背景
+   ========================================================= */
+
+.city-ikebukuro .event-detail-image {
+  background-color: #ef4444;
+}
+
+.city-shinjuku .event-detail-image {
+  background-color: #2563eb;
+}
+
+.city-shibuya .event-detail-image {
+  background-color: #f59e0b;
+}
+
+.city-ueno .event-detail-image {
+  background-color: #22c55e;
+}
+
+.city-nagoya .event-detail-image {
+  background-color: #8b5cf6;
+}
+
+.city-osaka .event-detail-image {
+  background-color: #f97316;
+}
+
+.city-akihabara .event-detail-image {
+  background-color: #ec4899;
+}
+
+.city-nakano .event-detail-image {
+  background-color: #14b8a6;
+}
+
+.city-default .event-detail-image {
+  background-color: #2563eb;
+}
+
+
+/* =========================================================
+   詳細ページ本文
+   ========================================================= */
+
+.event-detail-content {
+  padding: 34px 40px 40px;
+}
+
+.event-detail-heading {
+  margin-bottom: 28px;
+}
+
+.event-detail-category {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 32px;
+
+  margin-bottom: 10px;
+
+  padding: 0 12px;
+
+  border: 1px solid var(
+    --city-color,
+    #2563eb
+  );
+
+  border-radius: 999px;
+
+  background: var(
+    --city-light,
+    #eff6ff
+  );
+
+  color: var(
+    --city-color,
+    #2563eb
+  );
+
+  font-size: 12px;
+
+  font-weight: 800;
+}
+
+.event-detail-title {
+  margin: 0;
+
+  color: var(--text-dark);
+
+  font-size: 32px;
+
+  line-height: 1.4;
+
+  font-weight: 800;
+}
+
+
+/* =========================================================
+   詳細ページ基本情報
+   ========================================================= */
+
+.event-detail-info {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  gap: 12px;
+}
+
+.event-detail-info-item {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  min-height: 78px;
+
+  padding: 12px 14px;
+
+  border: 1px solid var(
+    --city-color,
+    #2563eb
+  );
+
+  border-radius: 14px;
+
+  background: #ffffff;
+}
+
+.event-detail-info-icon {
+  width: 40px;
+  height: 40px;
+
+  flex-shrink: 0;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: var(
+    --city-light,
+    #eff6ff
+  );
+
+  font-size: 20px;
+}
+
+.event-detail-info-item > div {
+  min-width: 0;
+}
+
+.event-detail-info-label {
+  display: block;
+
+  margin-bottom: 3px;
+
+  color: #6b7280;
+
+  font-size: 11px;
+
+  font-weight: 700;
+}
+
+.event-detail-info-item strong {
+  display: block;
+
+  color: var(--text-dark);
+
+  font-size: 14px;
+
+  line-height: 1.5;
+
+  word-break: break-word;
+}
+
+
+/* =========================================================
+   詳細ページセクション
+   ========================================================= */
+
+.event-detail-section {
+  padding: 28px 0;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.event-detail-section:last-of-type {
+  border-bottom: 0;
+}
+
+.event-detail-section h2 {
+  position: relative;
+
+  margin-bottom: 16px;
+
+  padding-left: 14px;
+
+  color: var(--text-dark);
+
+  font-size: 20px;
+
+  line-height: 1.4;
+
+  font-weight: 800;
+}
+
+.event-detail-section h2::before {
+  content: "";
+
+  position: absolute;
+
+  top: 3px;
+  left: 0;
+
+  width: 5px;
+
+  height: calc(100% - 6px);
+
+  border-radius: 999px;
+
+  background: var(
+    --city-color,
+    #2563eb
+  );
+}
+
+.event-detail-section p {
+  margin: 0;
+
+  color: var(--text-light);
+
+  font-size: 14px;
+
+  line-height: 1.9;
+}
+
+
+/* =========================================================
+   参加者状況
+   ========================================================= */
+
+.participant-status {
+  margin-top: 4px;
+}
+
+.participant-count {
+  display: flex;
+
+  align-items: baseline;
+
+  gap: 4px;
+
+  margin-bottom: 12px;
+}
+
+.participant-count strong {
+  color: var(--text-dark);
+
+  font-size: 30px;
+
+  line-height: 1;
+
+  font-weight: 800;
+}
+
+.participant-count span {
+  color: var(--text-light);
+
+  font-size: 16px;
+
   font-weight: 600;
 }
 
-.detail-value {
-  color: var(--text-dark);
+.participant-bar {
+  width: 100%;
 
-  font-size: 15px;
+  height: 12px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background: #e5e7eb;
 }
 
-/* =========================
-   スマートフォン
-   ========================= */
+.participant-bar-fill {
+  height: 100%;
 
-@media (max-width: 768px) {
+  min-width: 0;
+
+  border-radius: 999px;
+
+  background: linear-gradient(
+    90deg,
+    var(--city-color, #2563eb),
+    #60a5fa
+  );
+
+  transition: width 0.3s ease;
+}
+
+.participant-remaining {
+  margin: 10px 0 0 !important;
+
+  color: var(--text-light) !important;
+
+  font-size: 14px !important;
+
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   交流会メタ情報
+   ========================================================= */
+
+.event-meta {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 12px;
+}
+
+.event-meta > div {
+  min-width: 140px;
+
+  padding: 12px 14px;
+
+  border-radius: 12px;
+
+  background: #f8fafc;
+}
+
+.event-meta span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #6b7280;
+
+  font-size: 11px;
+
+  font-weight: 700;
+}
+
+.event-meta strong {
+  color: var(--text-dark);
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   詳細ページ操作ボタン
+   ========================================================= */
+
+.event-detail-actions {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  padding-top: 28px;
+}
+
+.event-join-button {
+  min-width: 220px;
+}
+
+.event-join-button:disabled {
+  cursor: not-allowed;
+
+  opacity: 0.65;
+}
+
+
+/* =========================================================
+   ログイン・登録
+   ========================================================= */
+
+.auth-page {
+  min-height: 100vh;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 30px 20px;
+
+  background: var(--bg);
+}
+
+.auth-card {
+  width: min(460px, 100%);
+
+  padding: 36px;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  box-shadow: var(--shadow);
+}
+
+.auth-card h1,
+.auth-card h2 {
+  margin-bottom: 24px;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #374151;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+
+  padding: 11px 13px;
+
+  border: 1px solid #d1d5db;
+
+  border-radius: 10px;
+
+  outline: none;
+
+  background: #ffffff;
+
+  color: #111827;
+
+  font-family: var(--sans);
+
+  font-size: 14px;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  border-color: #2563eb;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(37, 99, 235, 0.10);
+}
+
+.form-group textarea {
+  min-height: 120px;
+
+  resize: vertical;
+}
+
+
+/* =========================================================
+   ユーザー一覧・プロフィール
+   ========================================================= */
+
+.user-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+.user-card {
+  padding: 22px;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 16px;
+
+  background: #ffffff;
+
+  box-shadow: var(--shadow);
+}
+
+.user-card h2,
+.user-card h3 {
+  margin-bottom: 8px;
+}
+
+.user-card p {
+  margin: 5px 0;
+
+  color: var(--text-light);
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   レスポンシブ
+   ========================================================= */
+
+@media (max-width: 1000px) {
+
+  .event-detail-info {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+}
+
+
+@media (max-width: 900px) {
+
+  .event-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+}
+
+
+@media (max-width: 700px) {
+
   .page {
-    padding: 26px 16px 40px;
+    padding: 28px 14px 50px;
   }
 
   .app-header-inner {
-    padding: 0 16px;
+    width: calc(100% - 24px);
+
+    min-height: 64px;
   }
 
-  .app-logo-text {
+  .app-logo {
     font-size: 19px;
   }
 
   .app-logo-icon {
-    width: 32px;
-    height: 32px;
+    width: 31px;
+    height: 31px;
   }
 
   .app-nav {
-    display: none;
+    gap: 2px;
   }
 
-  .page-header {
-    margin-bottom: 24px;
+  .app-nav a,
+  .header-logout {
+    padding: 0 8px;
+
+    font-size: 12px;
   }
 
-  .page-title-area {
-    gap: 10px;
+  .event-detail-content {
+    padding: 26px 20px 30px;
   }
 
-  .page-title-ball {
-    width: 36px;
-    height: 36px;
+  .event-detail-title {
+    font-size: 26px;
   }
+
+  .event-detail-info {
+    grid-template-columns: 1fr;
+  }
+
+  .event-detail-actions {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+  .event-detail-actions .button {
+    width: 100%;
+  }
+
+  .event-detail-image {
+    height: 190px;
+  }
+
+  .event-detail-image img {
+    height: 190px;
+  }
+
+  .user-grid {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+
+@media (max-width: 480px) {
 
   .page-title {
     font-size: 26px;
   }
 
-  .event-grid {
-    grid-template-columns: 1fr;
-
-    gap: 18px;
+  .page-description {
+    font-size: 13px;
   }
 
   .event-card-content {
@@ -952,50 +1518,24 @@
     font-size: 19px;
   }
 
-  .event-info-chip {
-    font-size: 11px;
+  .event-detail-title {
+    font-size: 23px;
   }
 
-  .city-label {
-    left: 12px;
-    bottom: 12px;
-
-    padding: 6px 10px;
-
-    font-size: 12px;
+  .event-detail-image {
+    height: 170px;
   }
 
-  .event-button-area {
-    justify-content: stretch;
+  .event-detail-image img {
+    height: 170px;
   }
 
-  .event-button-area .button {
-    width: 100%;
+  .participant-count strong {
+    font-size: 26px;
   }
 
-  .detail-card {
-    padding: 24px 20px;
+  .auth-card {
+    padding: 26px 20px;
   }
 
-  .detail-title {
-    font-size: 24px;
-  }
-
-  .detail-info-row {
-    flex-direction: column;
-
-    gap: 4px;
-  }
-
-  .detail-label {
-    width: auto;
-  }
-
-  .page-actions {
-    flex-direction: column;
-  }
-
-  .page-actions .button {
-    width: 100%;
-  }
 }
