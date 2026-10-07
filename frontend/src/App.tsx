@@ -5,6 +5,8 @@ import {
   Route,
 } from "react-router-dom";
 
+import "./App.css";
+
 
 // 各ページを読み込む
 import LoginPage from "./pages/LoginPage";

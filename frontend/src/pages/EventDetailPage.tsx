@@ -19,41 +19,33 @@ import type { Event } from "../types/event";
 // 交流会詳細画面
 function EventDetailPage() {
 
-  // URLからeventIdを取得する
+  // URLから交流会IDを取得する
   //
-  // 例えば、
   // /events/1
-  //
-  // なら、
+  // ↓
   // eventId = "1"
-  //
-  // となる。
   const { eventId } = useParams();
 
 
   // 交流会情報を保存するstate
-  //
-  // APIから取得する前はnull。
-  // 取得後はEvent型のデータが入る。
   const [event, setEvent] =
     useState<Event | null>(null);
 
 
-  // エラーメッセージなどを保存するstate
-  const [message, setMessage] = useState("");
+  // エラーメッセージを保存するstate
+  const [message, setMessage] =
+    useState("");
 
 
   // ページ移動に使う
   const navigate = useNavigate();
 
 
-  // ページが表示されたときに
-  // 交流会情報を取得する
+  // ページ表示時に交流会情報を取得する
   useEffect(() => {
 
     const getEvent = async (): Promise<void> => {
 
-      // URLからeventIdが取得できない場合
       if (!eventId) {
 
         setMessage(
@@ -66,26 +58,22 @@ function EventDetailPage() {
 
       try {
 
-        // FastAPIの交流会詳細APIへアクセスする
-        //
-        // 例えばeventIdが1なら、
-        // GET /events/1
-        // になる。
+        // FastAPIの交流会詳細APIへアクセス
         const response = await fetch(
           `http://127.0.0.1:8000/events/${eventId}`
         );
 
 
-        // FastAPIから返されたJSONを取得する
-        const data: Event | { detail: string } =
+        // JSONを取得
+        const data:
+          | Event
+          | { detail: string } =
           await response.json();
 
 
-        // HTTPステータスが200番台ではない場合
+        // エラーの場合
         if (!response.ok) {
 
-          // FastAPIのHTTPExceptionの場合、
-          // detailにエラーメッセージが入っている
           if ("detail" in data) {
 
             setMessage(data.detail);
@@ -101,7 +89,7 @@ function EventDetailPage() {
         }
 
 
-        // 取得した交流会情報をstateに保存する
+        // 交流会情報を保存
         if ("id" in data) {
 
           setEvent(data);
@@ -109,7 +97,6 @@ function EventDetailPage() {
 
       } catch (error) {
 
-        // 通信エラーなどが発生した場合
         console.error(error);
 
         setMessage(
@@ -119,111 +106,145 @@ function EventDetailPage() {
     };
 
 
-    // 交流会情報を取得する
     getEvent();
 
   }, [eventId]);
 
 
-  // 画面に表示する内容
+  // 日時を日本語表示に変換する
+  const formatDate = (
+    dateString: string
+  ): string => {
+
+    const date = new Date(dateString);
+
+    return date.toLocaleString(
+      "ja-JP",
+      {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        weekday: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }
+    );
+  };
+
+
   return (
-    <div>
+    <div className="page">
 
-      {/* アプリのタイトル */}
-      <h1>PokeMeet</h1>
+      <div className="page-container">
 
+        {/* 戻るボタン */}
+        <div className="page-actions">
 
-      {/* ページタイトル */}
-      <h2>交流会詳細</h2>
-
-
-      {/* エラーメッセージ */}
-      {message && (
-        <p>{message}</p>
-      )}
-
-
-      {/* 交流会情報が取得できた場合 */}
-      {event && (
-
-        <div>
-
-          {/* 交流会名 */}
-          <h3>
-            {event.title}
-          </h3>
-
-
-          {/* 開催日時 */}
-          <p>
-            開催日時：
-            {event.event_date}
-          </p>
-
-
-          {/* 開催場所 */}
-          <p>
-            場所：
-            {event.location}
-          </p>
-
-
-          {/* 定員 */}
-          <p>
-            定員：
-            {event.capacity}人
-          </p>
-
-
-          {/* 交流会の説明 */}
-          <p>
-            説明：
-            {event.description || "説明なし"}
-          </p>
-
-
-          {/* 作成者 */}
-          <p>
-            作成者ID：
-            {event.created_by}
-          </p>
-
-
-          {/* 交流会ID */}
-          <p>
-            交流会ID：
-            {event.id}
-          </p>
+          <button
+            className="button button-secondary"
+            onClick={() =>
+              navigate("/events")
+            }
+          >
+            ← 交流会一覧へ戻る
+          </button>
 
         </div>
-      )}
 
 
-      <br />
+        {/* エラーメッセージ */}
+        {message && (
+
+          <div className="message">
+            {message}
+          </div>
+
+        )}
 
 
-      {/* 交流会一覧へ戻る */}
-      <button
-        onClick={() =>
-          navigate("/events")
-        }
-      >
-        交流会一覧へ戻る
-      </button>
+        {/* 交流会情報 */}
+        {event && (
+
+          <div className="detail-card">
+
+            {/* 交流会名 */}
+            <h1 className="detail-title">
+              {event.title}
+            </h1>
 
 
-      <br />
-      <br />
+            {/* 基本情報 */}
+            <div className="detail-info">
+
+              <div className="detail-info-row">
+
+                <div className="detail-label">
+                  📅 開催日時
+                </div>
+
+                <div className="detail-value">
+                  {formatDate(event.event_date)}
+                </div>
+
+              </div>
 
 
-      {/* ユーザー一覧へ戻る */}
-      <button
-        onClick={() =>
-          navigate("/users")
-        }
-      >
-        ユーザー一覧へ戻る
-      </button>
+              <div className="detail-info-row">
+
+                <div className="detail-label">
+                  📍 場所
+                </div>
+
+                <div className="detail-value">
+                  {event.location}
+                </div>
+
+              </div>
+
+
+              <div className="detail-info-row">
+
+                <div className="detail-label">
+                  👥 定員
+                </div>
+
+                <div className="detail-value">
+                  {event.capacity}人
+                </div>
+
+              </div>
+
+            </div>
+
+
+            {/* 説明 */}
+            <h2>
+              交流会について
+            </h2>
+
+            <p>
+              {event.description
+                || "交流会の説明はありません。"}
+            </p>
+
+
+            {/* 後で参加機能につなげる */}
+            <div className="page-actions">
+
+              <button
+                className="button button-primary"
+                disabled
+              >
+                参加する（準備中）
+              </button>
+
+            </div>
+
+          </div>
+
+        )}
+
+      </div>
 
     </div>
   );

@@ -78,101 +78,191 @@ function EventsPage() {
   }, []);
 
 
+  // 日時を日本語表示に変換する関数
+  const formatDate = (
+    dateString: string
+  ): string => {
+
+    const date = new Date(dateString);
+
+    return date.toLocaleString(
+      "ja-JP",
+      {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        weekday: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }
+    );
+  };
+
+
   // 画面に表示する内容
   return (
-    <div>
+    <div className="page">
 
-      {/* アプリのタイトル */}
-      <h1>PokeMeet</h1>
+      <div className="page-container">
 
+        {/* =========================
+            ページタイトル
+            ========================= */}
 
-      {/* ページタイトル */}
-      <h2>交流会一覧</h2>
+        <div className="page-header">
 
+          <h1 className="page-title">
+            交流会一覧
+          </h1>
 
-      {/* エラーメッセージを表示 */}
-      {message && (
-        <p>{message}</p>
-      )}
-
-
-      {/* 交流会が存在する場合だけ一覧を表示 */}
-      {events.length > 0 ? (
-
-        <div>
-
-          {events.map((event) => (
-
-            <div key={event.id}>
-
-              {/* 交流会名 */}
-              <h3>
-                {event.title}
-              </h3>
-
-
-              {/* 開催日時 */}
-              <p>
-                開催日時：
-                {event.event_date}
-              </p>
-
-
-              {/* 開催場所 */}
-              <p>
-                場所：
-                {event.location}
-              </p>
-
-
-              {/* 定員 */}
-              <p>
-                定員：
-                {event.capacity}人
-              </p>
-
-
-              {/* 交流会の説明 */}
-              <p>
-                説明：
-                {event.description}
-              </p>
-
-
-              {/* 交流会詳細ページは後で作成する */}
-              <button
-                onClick={() =>
-                  navigate(`/events/${event.id}`)
-                }
-              >
-                詳細を見る
-              </button>
-
-
-              <hr />
-
-            </div>
-
-          ))}
+          <p className="page-description">
+            ポケモン好きな人と交流できるイベントを探そう！
+          </p>
 
         </div>
 
-      ) : (
 
-        // 交流会が存在しない場合
-        <p>
-          現在、交流会はありません。
-        </p>
+        {/* =========================
+            エラーメッセージ
+            ========================= */}
 
-      )}
+        {message && (
+          <div className="message">
+            {message}
+          </div>
+        )}
 
 
-      {/* ユーザー一覧へ戻る */}
-      <button
-        onClick={() => navigate("/users")}
-      >
-        ユーザー一覧へ戻る
-      </button>
+        {/* =========================
+            交流会一覧
+            ========================= */}
+
+        {events.length > 0 ? (
+
+          <div className="event-grid">
+
+            {events.map((event) => (
+
+              <div
+                className="event-card"
+                key={event.id}
+              >
+
+                {/* 交流会名 */}
+                <h2 className="event-card-title">
+                  {event.title}
+                </h2>
+
+
+                {/* 交流会情報 */}
+                <div className="event-info">
+
+                  {/* 開催日時 */}
+                  <div className="event-info-row">
+
+                    <span className="event-info-icon">
+                      📅
+                    </span>
+
+                    <span>
+                      {formatDate(event.event_date)}
+                    </span>
+
+                  </div>
+
+
+                  {/* 開催場所 */}
+                  <div className="event-info-row">
+
+                    <span className="event-info-icon">
+                      📍
+                    </span>
+
+                    <span>
+                      {event.location}
+                    </span>
+
+                  </div>
+
+
+                  {/* 定員 */}
+                  <div className="event-info-row">
+
+                    <span className="event-info-icon">
+                      👥
+                    </span>
+
+                    <span>
+                      定員 {event.capacity}人
+                    </span>
+
+                  </div>
+
+                </div>
+
+
+                {/* 交流会の説明 */}
+                <p className="event-description">
+
+                  {event.description
+                    || "交流会の説明はありません。"}
+
+                </p>
+
+
+                {/* 詳細ボタン */}
+                <div className="event-button-area">
+
+                  <button
+                    className="button button-primary"
+                    onClick={() =>
+                      navigate(`/events/${event.id}`)
+                    }
+                  >
+                    詳細を見る
+                  </button>
+
+                </div>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        ) : (
+
+          /* =========================
+             交流会が存在しない場合
+             ========================= */
+
+          <div className="empty-message">
+
+            現在、交流会はありません。
+
+          </div>
+
+        )}
+
+
+        {/* =========================
+            戻るボタン
+            ========================= */}
+
+        <div className="page-actions">
+
+          <button
+            className="button button-secondary"
+            onClick={() =>
+              navigate("/users")
+            }
+          >
+            ユーザー一覧へ戻る
+          </button>
+
+        </div>
+
+      </div>
 
     </div>
   );
