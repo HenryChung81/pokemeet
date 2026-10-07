@@ -13,6 +13,7 @@ import UsersPage from "./pages/UsersPage";
 import ProfilePage from "./pages/ProfilePage";
 import UserDetailPage from "./pages/UserDetailPage";
 import EventsPage from "./pages/EventsPage";
+import EventDetailPage from "./pages/EventDetailPage";
 
 
 // ログインが必要なページを保護するコンポーネント
@@ -39,10 +40,6 @@ function App() {
           新規登録画面
           ========================= */}
 
-      {/*
-        新規登録はログインしていなくても
-        アクセスできる。
-      */}
       <Route
         path="/register"
         element={<RegisterPage />}
@@ -100,6 +97,20 @@ function App() {
         element={
           <ProtectedRoute>
             <EventsPage />
+          </ProtectedRoute>
+        }
+      />
+
+
+      {/* =========================
+          交流会詳細
+          ========================= */}
+
+      <Route
+        path="/events/:eventId"
+        element={
+          <ProtectedRoute>
+            <EventDetailPage />
           </ProtectedRoute>
         }
       />
