@@ -1,108 +1,167 @@
-// Reactの状態管理と、
-// ページ表示時に処理を実行するための機能
-import {
-  useEffect,
-  useState,
-} from "react";
-
-// React Routerから、
-// 別のページへ移動するための機能を読み込む
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-// 交流会情報の型を読み込む
 import type { Event } from "../types/event";
 
+import ikebukuroImage from "../assets/cities/ikebukuro.png";
+import shinjukuImage from "../assets/cities/shinjuku.png";
+import shibuyaImage from "../assets/cities/shibuya.png";
+import uenoImage from "../assets/cities/ueno.png";
+import nagoyaImage from "../assets/cities/nagoya.png";
+import osakaImage from "../assets/cities/osaka.png";
+import akihabaraImage from "../assets/cities/akihabara.png";
+import nakanoImage from "../assets/cities/nakano.png";
 
-// 交流会一覧画面
+import "../App.css";
+
+/* =========================
+   開催地ごとの画像
+   ========================= */
+
+function getCityImage(location: string): string | null {
+  if (location.includes("池袋")) {
+    return ikebukuroImage;
+  }
+
+  if (location.includes("新宿")) {
+    return shinjukuImage;
+  }
+
+  if (location.includes("渋谷")) {
+    return shibuyaImage;
+  }
+
+  if (location.includes("上野")) {
+    return uenoImage;
+  }
+
+  if (location.includes("名古屋")) {
+    return nagoyaImage;
+  }
+
+  if (location.includes("大阪")) {
+    return osakaImage;
+  }
+
+  if (location.includes("秋葉原")) {
+    return akihabaraImage;
+  }
+
+  if (location.includes("中野")) {
+    return nakanoImage;
+  }
+
+  return null;
+}
+
+/* =========================
+   開催地ごとのCSSクラス
+   ========================= */
+
+function getCityClass(location: string): string {
+  if (location.includes("池袋")) {
+    return "city-ikebukuro";
+  }
+
+  if (location.includes("新宿")) {
+    return "city-shinjuku";
+  }
+
+  if (location.includes("渋谷")) {
+    return "city-shibuya";
+  }
+
+  if (location.includes("上野")) {
+    return "city-ueno";
+  }
+
+  if (location.includes("名古屋")) {
+    return "city-nagoya";
+  }
+
+  if (location.includes("大阪")) {
+    return "city-osaka";
+  }
+
+  if (location.includes("秋葉原")) {
+    return "city-akihabara";
+  }
+
+  if (location.includes("中野")) {
+    return "city-nakano";
+  }
+
+  return "city-default";
+}
+
+/* =========================
+   日付表示
+   ========================= */
+
+function formatEventDate(dateString: string): string {
+  const date = new Date(dateString);
+
+  return date.toLocaleString("ja-JP", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/* =========================
+   交流会一覧ページ
+   ========================= */
+
 function EventsPage() {
-
-  // 交流会一覧を保存するstate
-  const [events, setEvents] = useState<Event[]>([]);
-
-
-  // エラーメッセージなどを保存するstate
-  const [message, setMessage] = useState("");
-
-
-  // ページ移動に使う
   const navigate = useNavigate();
 
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // ページが表示されたときに
-  // 交流会一覧を取得する
+  /* =========================
+     交流会取得
+     ========================= */
+
   useEffect(() => {
-
-    const getEvents = async (): Promise<void> => {
-
+    const fetchEvents = async () => {
       try {
+        setLoading(true);
+        setError("");
 
-        // FastAPIの交流会一覧APIへアクセスする
         const response = await fetch(
           "http://127.0.0.1:8000/events"
         );
 
-
-        // FastAPIから返されたJSONを取得する
-        const data: Event[] = await response.json();
-
-
-        // HTTPステータスが200番台ではない場合
         if (!response.ok) {
-
-          setMessage(
-            "交流会一覧の取得に失敗しました"
+          throw new Error(
+            "交流会の取得に失敗しました"
           );
-
-          return;
         }
 
+        const data: Event[] =
+          await response.json();
 
-        // 取得した交流会一覧をstateに保存する
         setEvents(data);
-
       } catch (error) {
-
-        // 通信エラーなどが発生した場合
         console.error(error);
 
-        setMessage(
-          "通信エラーが発生しました"
+        setError(
+          "交流会の取得に失敗しました。"
         );
+      } finally {
+        setLoading(false);
       }
     };
 
-
-    // 交流会一覧を取得する
-    getEvents();
-
+    fetchEvents();
   }, []);
 
-
-  // 日時を日本語表示に変換する関数
-  const formatDate = (
-    dateString: string
-  ): string => {
-
-    const date = new Date(dateString);
-
-    return date.toLocaleString(
-      "ja-JP",
-      {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        weekday: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      }
-    );
-  };
-
-
-  // 画面に表示する内容
   return (
-    <div className="page">
-
+    <main className="page">
       <div className="page-container">
 
         {/* =========================
@@ -110,164 +169,199 @@ function EventsPage() {
             ========================= */}
 
         <div className="page-header">
+          <div className="page-title-area">
+            <span className="page-title-ball"></span>
 
-          <h1 className="page-title">
-            交流会一覧
-          </h1>
+            <div>
+              <h1 className="page-title">
+                交流会を探す
+              </h1>
 
-          <p className="page-description">
-            ポケモン好きな人と交流できるイベントを探そう！
-          </p>
-
+              <p className="page-description">
+                ポケモン好きが集まる交流会を探してみよう！
+              </p>
+            </div>
+          </div>
         </div>
 
-
         {/* =========================
-            エラーメッセージ
+            読み込み中
             ========================= */}
 
-        {message && (
-          <div className="message">
-            {message}
-          </div>
-        )}
-
-
-        {/* =========================
-            交流会一覧
-            ========================= */}
-
-        {events.length > 0 ? (
-
-          <div className="event-grid">
-
-            {events.map((event) => (
-
-              <div
-                className="event-card"
-                key={event.id}
-              >
-
-                {/* 交流会名 */}
-                <h2 className="event-card-title">
-                  {event.title}
-                </h2>
-
-
-                {/* 交流会情報 */}
-                <div className="event-info">
-
-                  {/* 開催日時 */}
-                  <div className="event-info-row">
-
-                    <span className="event-info-icon">
-                      📅
-                    </span>
-
-                    <span>
-                      {formatDate(event.event_date)}
-                    </span>
-
-                  </div>
-
-
-                  {/* 開催場所 */}
-                  <div className="event-info-row">
-
-                    <span className="event-info-icon">
-                      📍
-                    </span>
-
-                    <span>
-                      {event.location}
-                    </span>
-
-                  </div>
-
-
-                  {/* 定員 */}
-                  <div className="event-info-row">
-
-                    <span className="event-info-icon">
-                      👥
-                    </span>
-
-                    <span>
-                      定員 {event.capacity}人
-                    </span>
-
-                  </div>
-
-                </div>
-
-
-                {/* 交流会の説明 */}
-                <p className="event-description">
-
-                  {event.description
-                    || "交流会の説明はありません。"}
-
-                </p>
-
-
-                {/* 詳細ボタン */}
-                <div className="event-button-area">
-
-                  <button
-                    className="button button-primary"
-                    onClick={() =>
-                      navigate(`/events/${event.id}`)
-                    }
-                  >
-                    詳細を見る
-                  </button>
-
-                </div>
-
-              </div>
-
-            ))}
-
-          </div>
-
-        ) : (
-
-          /* =========================
-             交流会が存在しない場合
-             ========================= */
-
+        {loading && (
           <div className="empty-message">
-
-            現在、交流会はありません。
-
+            交流会を読み込んでいます...
           </div>
-
         )}
 
-
         {/* =========================
-            戻るボタン
+            エラー
             ========================= */}
 
-        <div className="page-actions">
+        {!loading && error && (
+          <div className="message">
+            {error}
+          </div>
+        )}
 
-          <button
-            className="button button-secondary"
-            onClick={() =>
-              navigate("/users")
-            }
-          >
-            ユーザー一覧へ戻る
-          </button>
+        {/* =========================
+            交流会なし
+            ========================= */}
 
-        </div>
+        {!loading &&
+          !error &&
+          events.length === 0 && (
+            <div className="empty-message">
+              現在、開催予定の交流会はありません。
+            </div>
+          )}
+
+        {/* =========================
+            交流会一覧
+            ========================= */}
+
+        {!loading &&
+          !error &&
+          events.length > 0 && (
+            <div className="event-grid">
+
+              {events.map((event) => {
+                const cityImage =
+                  getCityImage(
+                    event.location
+                  );
+
+                const cityClass =
+                  getCityClass(
+                    event.location
+                  );
+
+                return (
+                  <article
+                    key={event.id}
+                    className={`event-card ${cityClass}`}
+                  >
+
+                    {/* =========================
+                        都市イラスト
+                        ========================= */}
+
+                    {cityImage && (
+                      <div className="event-city-image">
+                        <img
+                          src={cityImage}
+                          alt={`${event.location}の街並み`}
+                        />
+
+                        <div className="city-label">
+                          <span className="city-label-ball"></span>
+                          {event.location}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* =========================
+                        カード本文
+                        ========================= */}
+
+                    <div className="event-card-content">
+
+                      <h2 className="event-card-title">
+                        {event.title}
+                      </h2>
+
+                      {/* =========================
+                          イベント情報
+                          ========================= */}
+
+                      <div className="event-info">
+
+                        <div className="event-info-chip">
+                          <span className="event-info-icon">
+                            📅
+                          </span>
+
+                          <span>
+                            {formatEventDate(
+                              event.event_date
+                            )}
+                          </span>
+                        </div>
+
+                        <div className="event-info-chip">
+                          <span className="event-info-icon">
+                            📍
+                          </span>
+
+                          <span>
+                            {event.location}
+                          </span>
+                        </div>
+
+                        <div className="event-info-chip">
+                          <span className="event-info-icon">
+                            👥
+                          </span>
+
+                          <span>
+                            定員 {event.capacity}名
+                          </span>
+                        </div>
+
+                      </div>
+
+                      {/* =========================
+                          説明
+                          ========================= */}
+
+                      {event.description && (
+                        <p className="event-description">
+                          {event.description}
+                        </p>
+                      )}
+
+                      {/* =========================
+                          詳細ボタン
+                          ========================= */}
+
+                      <div className="event-button-area">
+
+                        <button
+                          className="button button-primary"
+                          onClick={() =>
+                            navigate(
+                              `/events/${event.id}`
+                            )
+                          }
+                        >
+                          <span
+                            className="button-ball"
+                            aria-hidden="true"
+                          ></span>
+
+                          <span>
+                            詳細を見る
+                          </span>
+
+                          <span className="button-arrow">
+                            →
+                          </span>
+                        </button>
+
+                      </div>
+
+                    </div>
+
+                  </article>
+                );
+              })}
+
+            </div>
+          )}
 
       </div>
-
-    </div>
+    </main>
   );
 }
 
-
-// EventsPageを他のファイルから使用できるようにする
 export default EventsPage;
