@@ -21,6 +21,9 @@ class EventCreate(BaseModel):
     # 定員
     capacity: int = 20
 
+    # 参加費
+    participation_fee: int = 0
+
 
 # 交流会一覧・詳細で返すデータ
 class EventResponse(BaseModel):

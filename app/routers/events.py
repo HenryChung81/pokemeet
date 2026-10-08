@@ -170,19 +170,57 @@ def create_event(
     event_data: EventCreate,
     user_id: int = Depends(get_current_user_id)
 ):
-    if event_data.capacity <= 0:
-        raise HTTPException(
-            status_code=400,
-            detail="定員は1名以上にしてください"
-        )
-
-    if event_data.participation_fee < 0:
-        raise HTTPException(
-            status_code=400,
-            detail="参加料金は0円以上にしてください"
-        )
-
     with engine.connect() as connection:
+
+        # -------------------------------------------------
+        # 管理者チェック
+        # -------------------------------------------------
+
+        user_result = connection.execute(
+            text("""
+                SELECT role
+                FROM users
+                WHERE id = :user_id
+            """),
+            {
+                "user_id": user_id
+            }
+        )
+
+        user = user_result.fetchone()
+
+        if user is None:
+            raise HTTPException(
+                status_code=404,
+                detail="ユーザーが見つかりません"
+            )
+
+        if user.role != "admin":
+            raise HTTPException(
+                status_code=403,
+                detail="交流会を作成できるのは管理者のみです"
+            )
+
+        # -------------------------------------------------
+        # 入力チェック
+        # -------------------------------------------------
+
+        if event_data.capacity <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="定員は1名以上にしてください"
+            )
+
+        if event_data.participation_fee < 0:
+            raise HTTPException(
+                status_code=400,
+                detail="参加料金は0円以上にしてください"
+            )
+
+        # -------------------------------------------------
+        # 交流会作成
+        # -------------------------------------------------
+
         connection.execute(
             text("""
                 INSERT INTO events (
