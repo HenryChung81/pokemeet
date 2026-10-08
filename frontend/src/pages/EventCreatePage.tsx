@@ -449,15 +449,6 @@ function EventCreatePage() {
 
           </div>
 
-
-          <div className="event-create-admin-badge">
-
-            <span>●</span>
-
-            管理者専用
-
-          </div>
-
         </section>
 
 

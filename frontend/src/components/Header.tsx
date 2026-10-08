@@ -1,28 +1,68 @@
-// React Routerから、
-// 現在のページへのリンクとページ移動に使う機能を読み込む
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import {
   NavLink,
   useNavigate,
 } from "react-router-dom";
 
 
-// PokeMeet共通ヘッダー
 function Header() {
-
-  // ページ移動に使う
   const navigate = useNavigate();
 
+  const [isAdmin, setIsAdmin] =
+    useState(false);
 
-  // ログアウト処理
+
+  /* =========================
+     ログインユーザー情報取得
+     ========================= */
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/me",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem(
+                "access_token"
+              )}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data =
+          await response.json();
+
+        setIsAdmin(
+          data.role === "admin"
+        );
+
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
+
+  /* =========================
+     ログアウト
+     ========================= */
+
   const handleLogout = (): void => {
-
-    // 保存されているJWTを削除する
     localStorage.removeItem(
       "access_token"
     );
 
-
-    // ログイン画面へ移動する
     navigate("/");
   };
 
@@ -32,8 +72,9 @@ function Header() {
 
       <div className="app-header-inner">
 
+
         {/* =========================
-            PokeMeetロゴ
+            ロゴ
             ========================= */}
 
         <NavLink
@@ -41,11 +82,19 @@ function Header() {
           className="app-logo"
         >
 
-          {/* モンスターボール風アイコン */}
-          <span className="app-logo-icon"></span>
+          <span
+            className={
+              isAdmin
+                ? "app-logo-icon app-logo-icon-admin"
+                : "app-logo-icon"
+            }
+            aria-label={
+              isAdmin
+                ? "管理者"
+                : "PokeMeet"
+            }
+          ></span>
 
-
-          {/* アプリ名 */}
           <span className="app-logo-text">
             PokeMeet
           </span>
@@ -62,7 +111,9 @@ function Header() {
           <NavLink
             to="/events"
             className={({ isActive }) =>
-              isActive ? "active" : ""
+              isActive
+                ? "active"
+                : ""
             }
           >
             交流会
@@ -72,7 +123,9 @@ function Header() {
           <NavLink
             to="/users"
             className={({ isActive }) =>
-              isActive ? "active" : ""
+              isActive
+                ? "active"
+                : ""
             }
           >
             ユーザー
@@ -82,7 +135,9 @@ function Header() {
           <NavLink
             to="/profile"
             className={({ isActive }) =>
-              isActive ? "active" : ""
+              isActive
+                ? "active"
+                : ""
             }
           >
             プロフィール
@@ -105,5 +160,4 @@ function Header() {
 }
 
 
-// 他のファイルから使用できるようにする
 export default Header;
