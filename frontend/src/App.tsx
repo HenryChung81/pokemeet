@@ -16,6 +16,7 @@ import ProfilePage from "./pages/ProfilePage";
 import UserDetailPage from "./pages/UserDetailPage";
 import EventsPage from "./pages/EventsPage";
 import EventDetailPage from "./pages/EventDetailPage";
+import EventCreatePage from "./pages/EventCreatePage";
 
 
 // ログインが必要なページを保護するコンポーネント
@@ -117,7 +118,22 @@ function App() {
         }
       />
 
+      {/* =========================
+          交流会作成
+          ========================= */}
+
+      <Route
+        path="/events/create"
+        element={
+          <ProtectedRoute>
+            <EventCreatePage />
+          </ProtectedRoute>
+        }
+      />
+
     </Routes>
+
+    
   );
 }
 
