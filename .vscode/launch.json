@@ -1,0 +1,30 @@
+{
+    // VS Codeのデバッグ設定のバージョン
+    "version": "0.2.0",
+
+    // デバッグ構成
+    "configurations": [
+        {
+            // デバッグ画面に表示される名前
+            "name": "Python デバッガー: FastAPI",
+
+            // Pythonのデバッガーを使用
+            "type": "debugpy",
+
+            // プログラムを起動してデバッグする
+            "request": "launch",
+
+            // uvicornをPythonモジュールとして起動
+            "module": "uvicorn",
+
+            // FastAPIアプリケーションの指定
+            // app/main.py の app オブジェクトを使用
+            "args": [
+                "app.main:app"
+            ],
+
+            // Jinjaテンプレートのデバッグを有効化
+            "jinja": true
+        }
+    ]
+}

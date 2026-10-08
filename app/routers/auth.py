@@ -179,7 +179,8 @@ def get_me(
                     nickname,
                     favorite_pokemon,
                     language,
-                    introduction
+                    introduction,
+                    role
                 FROM users
                 WHERE id = :user_id
             """),
@@ -199,13 +200,14 @@ def get_me(
             )
 
         # パスワード情報は返さず、
-        # プロフィール情報だけ返す
+        # プロフィール情報と権限だけ返す
         return {
             "id": user.id,
             "nickname": user.nickname,
             "favorite_pokemon": user.favorite_pokemon,
             "language": user.language,
-            "introduction": user.introduction
+            "introduction": user.introduction,
+            "role": user.role
         }
 
 
@@ -219,10 +221,12 @@ def update_me(
     # MySQLへ接続
     with engine.connect() as connection:
 
-        # ユーザーが存在するか確認
+        # JWTから取得したuser_idで
+        # ユーザーが存在するか確認する
         result = connection.execute(
             text("""
-                SELECT id
+                SELECT
+                    id
                 FROM users
                 WHERE id = :user_id
             """),
@@ -231,16 +235,17 @@ def update_me(
             }
         )
 
+        # 検索結果を1件取得
         user = result.fetchone()
 
-        # ユーザーが存在しない場合
+        # DBにユーザーが存在しない場合
         if user is None:
             raise HTTPException(
                 status_code=404,
                 detail="ユーザーが見つかりません"
             )
 
-        # プロフィール情報を更新
+        # プロフィール情報を更新する
         connection.execute(
             text("""
                 UPDATE users
@@ -260,7 +265,7 @@ def update_me(
             }
         )
 
-        # UPDATEを確定
+        # 更新内容を確定する
         connection.commit()
 
     return {

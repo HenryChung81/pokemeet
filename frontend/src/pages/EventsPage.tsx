@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
 
 import type { Event } from "../types/event";
@@ -14,9 +15,10 @@ import nakanoImage from "../assets/cities/nakano.png";
 
 import "../App.css";
 
+
 /* =========================
-   開催地ごとの画像
-   ========================= */
+  開催地ごとの画像
+  ========================= */
 
 function getCityImage(location: string): string | null {
   if (location.includes("池袋")) {
@@ -54,9 +56,10 @@ function getCityImage(location: string): string | null {
   return null;
 }
 
+
 /* =========================
-   開催地ごとのCSSクラス
-   ========================= */
+  開催地ごとのCSSクラス
+  ========================= */
 
 function getCityClass(location: string): string {
   if (location.includes("池袋")) {
@@ -94,9 +97,10 @@ function getCityClass(location: string): string {
   return "city-default";
 }
 
+
 /* =========================
-   日付表示
-   ========================= */
+  日付表示
+  ========================= */
 
 function formatEventDate(dateString: string): string {
   const date = new Date(dateString);
@@ -111,9 +115,10 @@ function formatEventDate(dateString: string): string {
   });
 }
 
+
 /* =========================
-   交流会一覧ページ
-   ========================= */
+  交流会一覧ページ
+  ========================= */
 
 function EventsPage() {
   const navigate = useNavigate();
@@ -122,9 +127,13 @@ function EventsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // 管理者かどうか
+  const [isAdmin, setIsAdmin] = useState(false);
+
+
   /* =========================
-     交流会取得
-     ========================= */
+    交流会取得
+    ========================= */
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -160,16 +169,54 @@ function EventsPage() {
     fetchEvents();
   }, []);
 
+
+  /* =========================
+    ログインユーザー情報取得
+    ========================= */
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/me",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem(
+                "access_token"
+              )}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+
+        setIsAdmin(data.role === "admin");
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
+
   return (
     <main className="page">
       <div className="page-container">
+
 
         {/* =========================
             ページタイトル
             ========================= */}
 
         <div className="page-header">
+
           <div className="page-title-area">
+
             <span className="page-title-ball"></span>
 
             <div>
@@ -181,8 +228,27 @@ function EventsPage() {
                 ポケモン好きが集まる交流会を探してみよう！
               </p>
             </div>
+
           </div>
+
+
+          {/* =========================
+              管理者のみ表示
+              ========================= */}
+
+          {isAdmin && (
+            <button
+              className="button button-primary"
+              onClick={() =>
+                navigate("/events/create")
+              }
+            >
+              ＋ 交流会を作成
+            </button>
+          )}
+
         </div>
+
 
         {/* =========================
             読み込み中
@@ -194,6 +260,7 @@ function EventsPage() {
           </div>
         )}
 
+
         {/* =========================
             エラー
             ========================= */}
@@ -203,6 +270,7 @@ function EventsPage() {
             {error}
           </div>
         )}
+
 
         {/* =========================
             交流会なし
@@ -216,6 +284,7 @@ function EventsPage() {
             </div>
           )}
 
+
         {/* =========================
             交流会一覧
             ========================= */}
@@ -226,6 +295,7 @@ function EventsPage() {
             <div className="event-grid">
 
               {events.map((event) => {
+
                 const cityImage =
                   getCityImage(
                     event.location
@@ -242,12 +312,14 @@ function EventsPage() {
                     className={`event-card ${cityClass}`}
                   >
 
+
                     {/* =========================
                         都市イラスト
                         ========================= */}
 
                     {cityImage && (
                       <div className="event-city-image">
+
                         <img
                           src={cityImage}
                           alt={`${event.location}の街並み`}
@@ -257,8 +329,10 @@ function EventsPage() {
                           <span className="city-label-ball"></span>
                           {event.location}
                         </div>
+
                       </div>
                     )}
+
 
                     {/* =========================
                         カード本文
@@ -270,6 +344,7 @@ function EventsPage() {
                         {event.title}
                       </h2>
 
+
                       {/* =========================
                           イベント情報
                           ========================= */}
@@ -277,6 +352,7 @@ function EventsPage() {
                       <div className="event-info">
 
                         <div className="event-info-chip">
+
                           <span className="event-info-icon">
                             📅
                           </span>
@@ -286,9 +362,12 @@ function EventsPage() {
                               event.event_date
                             )}
                           </span>
+
                         </div>
 
+
                         <div className="event-info-chip">
+
                           <span className="event-info-icon">
                             📍
                           </span>
@@ -296,9 +375,12 @@ function EventsPage() {
                           <span>
                             {event.location}
                           </span>
+
                         </div>
 
+
                         <div className="event-info-chip">
+
                           <span className="event-info-icon">
                             👥
                           </span>
@@ -306,9 +388,11 @@ function EventsPage() {
                           <span>
                             定員 {event.capacity}名
                           </span>
+
                         </div>
 
                       </div>
+
 
                       {/* =========================
                           説明
@@ -319,6 +403,7 @@ function EventsPage() {
                           {event.description}
                         </p>
                       )}
+
 
                       {/* =========================
                           詳細ボタン
@@ -334,6 +419,7 @@ function EventsPage() {
                             )
                           }
                         >
+
                           <span
                             className="button-ball"
                             aria-hidden="true"
@@ -346,6 +432,7 @@ function EventsPage() {
                           <span className="button-arrow">
                             →
                           </span>
+
                         </button>
 
                       </div>
