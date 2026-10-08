@@ -12,6 +12,10 @@ import nagoyaImage from "../assets/cities/nagoya.png";
 import osakaImage from "../assets/cities/osaka.png";
 import akihabaraImage from "../assets/cities/akihabara.png";
 import nakanoImage from "../assets/cities/nakano.png";
+import taipeiImage from "../assets/cities/taipei.png";
+import yokohamaImage from "../assets/cities/yokohama.png";
+import kichijojiImage from "../assets/cities/kichijoji.png";
+import defaultImage from "../assets/cities/default.png";
 
 import "../App.css";
 
@@ -52,8 +56,19 @@ function getCityImage(location: string): string | null {
   if (location.includes("中野")) {
     return nakanoImage;
   }
+    if (location.includes("台北")) {
+    return taipeiImage;
+  }
 
-  return null;
+  if (location.includes("横浜")) {
+    return yokohamaImage;
+  }
+
+  if (location.includes("吉祥寺")) {
+    return kichijojiImage;
+  }
+
+  return defaultImage;
 }
 
 
