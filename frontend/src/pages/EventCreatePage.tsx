@@ -1,9 +1,21 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import type {
+  ChangeEvent,
+  FormEvent,
+} from "react";
+
+import {
+  useNavigate,
+} from "react-router-dom";
+
+import "./EventCreatePage.css";
 
 
 function EventCreatePage() {
-
   const navigate = useNavigate();
 
   const [isAdmin, setIsAdmin] = useState(false);
@@ -15,8 +27,11 @@ function EventCreatePage() {
   const [capacity, setCapacity] = useState("20");
   const [participationFee, setParticipationFee] = useState("0");
 
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState("");
+  const [selectedImage, setSelectedImage] =
+    useState<File | null>(null);
+
+  const [imagePreview, setImagePreview] =
+    useState("");
 
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -28,11 +43,8 @@ function EventCreatePage() {
      ========================= */
 
   useEffect(() => {
-
     const fetchCurrentUser = async () => {
-
       try {
-
         const response = await fetch(
           "http://127.0.0.1:8000/me",
           {
@@ -44,45 +56,30 @@ function EventCreatePage() {
           }
         );
 
-
         if (!response.ok) {
-
           navigate("/events");
-
           return;
         }
-
 
         const data = await response.json();
 
-
         if (data.role !== "admin") {
-
           navigate("/events");
-
           return;
         }
-
 
         setIsAdmin(true);
 
       } catch (error) {
-
         console.error(error);
-
         navigate("/events");
 
       } finally {
-
         setLoading(false);
-
       }
-
     };
 
-
     fetchCurrentUser();
-
   }, [navigate]);
 
 
@@ -91,17 +88,11 @@ function EventCreatePage() {
      ========================= */
 
   useEffect(() => {
-
     return () => {
-
       if (imagePreview) {
-
         URL.revokeObjectURL(imagePreview);
-
       }
-
     };
-
   }, [imagePreview]);
 
 
@@ -110,23 +101,18 @@ function EventCreatePage() {
      ========================= */
 
   const handleImageChange = (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: ChangeEvent<HTMLInputElement>
   ) => {
-
     setError("");
 
-
-    const file = event.target.files?.[0] ?? null;
-
+    const file =
+      event.target.files?.[0] ?? null;
 
     if (!file) {
-
       setSelectedImage(null);
       setImagePreview("");
-
       return;
     }
-
 
     const allowedTypes = [
       "image/jpeg",
@@ -134,9 +120,7 @@ function EventCreatePage() {
       "image/webp",
     ];
 
-
     if (!allowedTypes.includes(file.type)) {
-
       setSelectedImage(null);
       setImagePreview("");
 
@@ -149,9 +133,7 @@ function EventCreatePage() {
       return;
     }
 
-
     if (file.size > 5 * 1024 * 1024) {
-
       setSelectedImage(null);
       setImagePreview("");
 
@@ -164,13 +146,11 @@ function EventCreatePage() {
       return;
     }
 
-
     setSelectedImage(file);
 
     setImagePreview(
       URL.createObjectURL(file)
     );
-
   };
 
 
@@ -179,60 +159,54 @@ function EventCreatePage() {
      ========================= */
 
   const handleSubmit = async (
-    event: React.FormEvent<HTMLFormElement>
+    event: FormEvent<HTMLFormElement>
   ) => {
-
     event.preventDefault();
 
     setError("");
 
-
     if (!title.trim()) {
-
-      setError("交流会名を入力してください");
-
+      setError(
+        "交流会名を入力してください"
+      );
       return;
     }
-
 
     if (!eventDate) {
-
-      setError("開催日時を入力してください");
-
+      setError(
+        "開催日時を入力してください"
+      );
       return;
     }
-
 
     if (!location.trim()) {
-
-      setError("開催場所を入力してください");
-
+      setError(
+        "開催場所を入力してください"
+      );
       return;
     }
 
+    const capacityNumber =
+      Number(capacity);
 
-    const capacityNumber = Number(capacity);
-    const participationFeeNumber = Number(participationFee);
-
+    const participationFeeNumber =
+      Number(participationFee);
 
     if (capacityNumber <= 0) {
-
-      setError("定員は1名以上にしてください");
-
+      setError(
+        "定員は1名以上にしてください"
+      );
       return;
     }
-
 
     if (participationFeeNumber < 0) {
-
-      setError("参加料金は0円以上にしてください");
-
+      setError(
+        "参加料金は0円以上にしてください"
+      );
       return;
     }
 
-
     try {
-
       setCreating(true);
 
 
@@ -246,7 +220,9 @@ function EventCreatePage() {
           method: "POST",
 
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
+
             Authorization: `Bearer ${localStorage.getItem(
               "access_token"
             )}`,
@@ -254,24 +230,33 @@ function EventCreatePage() {
 
           body: JSON.stringify({
             title: title.trim(),
-            description: description.trim() || null,
+
+            description:
+              description.trim() || null,
+
             event_date: eventDate,
-            location: location.trim(),
-            capacity: capacityNumber,
-            participation_fee: participationFeeNumber,
+
+            location:
+              location.trim(),
+
+            capacity:
+              capacityNumber,
+
+            participation_fee:
+              participationFeeNumber,
           }),
         }
       );
 
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
 
       if (!response.ok) {
-
         setError(
           data.detail ||
-          "交流会の作成に失敗しました"
+            "交流会の作成に失敗しました"
         );
 
         return;
@@ -282,11 +267,11 @@ function EventCreatePage() {
          作成した交流会のID取得
          ========================= */
 
-      const eventId = data.event_id;
+      const eventId =
+        data.event_id;
 
 
       if (!eventId) {
-
         setError(
           "交流会は作成されましたが、交流会IDを取得できませんでした"
         );
@@ -300,8 +285,8 @@ function EventCreatePage() {
          ========================= */
 
       if (selectedImage) {
-
-        const formData = new FormData();
+        const formData =
+          new FormData();
 
         formData.append(
           "image",
@@ -309,35 +294,35 @@ function EventCreatePage() {
         );
 
 
-        const imageResponse = await fetch(
-          `http://127.0.0.1:8000/events/${eventId}/image`,
-          {
-            method: "POST",
+        const imageResponse =
+          await fetch(
+            `http://127.0.0.1:8000/events/${eventId}/image`,
+            {
+              method: "POST",
 
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem(
-                "access_token"
-              )}`,
-            },
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem(
+                  "access_token"
+                )}`,
+              },
 
-            body: formData,
-          }
-        );
+              body: formData,
+            }
+          );
 
 
-        const imageData = await imageResponse.json();
+        const imageData =
+          await imageResponse.json();
 
 
         if (!imageResponse.ok) {
-
           setError(
             imageData.detail ||
-            "交流会は作成されましたが、画像のアップロードに失敗しました"
+              "交流会は作成されましたが、画像のアップロードに失敗しました"
           );
 
           return;
         }
-
       }
 
 
@@ -345,10 +330,11 @@ function EventCreatePage() {
          作成完了
          ========================= */
 
-      navigate(`/events/${eventId}`);
+      navigate(
+        `/events/${eventId}`
+      );
 
     } catch (error) {
-
       console.error(error);
 
       setError(
@@ -356,11 +342,41 @@ function EventCreatePage() {
       );
 
     } finally {
-
       setCreating(false);
+    }
+  };
 
+
+  /* =========================
+     プレビュー用日時表示
+     ========================= */
+
+  const getPreviewDate = () => {
+    if (!eventDate) {
+      return "開催日時を入力してください";
     }
 
+    const date =
+      new Date(eventDate);
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return eventDate;
+    }
+
+    return date.toLocaleString(
+      "ja-JP",
+      {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }
+    );
   };
 
 
@@ -369,7 +385,6 @@ function EventCreatePage() {
      ========================= */
 
   if (loading) {
-
     return (
       <main className="page">
         <div className="page-container">
@@ -381,7 +396,6 @@ function EventCreatePage() {
         </div>
       </main>
     );
-
   }
 
 
@@ -390,43 +404,61 @@ function EventCreatePage() {
      ========================= */
 
   if (!isAdmin) {
-
     return null;
-
   }
 
 
   return (
-
-    <main className="page">
+    <main className="page event-create-page">
 
       <div className="page-container">
 
+
         {/* =========================
-            ページタイトル
+            ページヘッダー
             ========================= */}
 
-        <div className="page-header">
+        <section className="event-create-hero">
 
-          <div className="page-title-area">
+          <div className="event-create-hero-content">
 
-            <span className="page-title-ball"></span>
+            <div className="event-create-eyebrow">
 
-            <div>
+              <span className="event-create-eyebrow-dot"></span>
 
-              <h1 className="page-title">
-                交流会を作成
-              </h1>
+              ADMIN / EVENT CREATE
 
-              <p className="page-description">
-                新しいポケモン交流会を作成しよう！
-              </p>
+            </div>
+
+
+            <div className="event-create-title-row">
+
+              <div>
+
+                <h1 className="event-create-title">
+                  交流会を作成
+                </h1>
+
+                <p className="event-create-description">
+                  ポケモン好きが集まる新しい交流会を作成しましょう。
+                </p>
+
+              </div>
 
             </div>
 
           </div>
 
-        </div>
+
+          <div className="event-create-admin-badge">
+
+            <span>●</span>
+
+            管理者専用
+
+          </div>
+
+        </section>
 
 
         {/* =========================
@@ -434,237 +466,689 @@ function EventCreatePage() {
             ========================= */}
 
         {error && (
+          <div className="event-create-error">
 
-          <div className="message">
-            {error}
+            <span className="event-create-error-icon">
+              !
+            </span>
+
+            <div>
+
+              <strong>
+                入力内容を確認してください
+              </strong>
+
+              <p>
+                {error}
+              </p>
+
+            </div>
+
           </div>
-
         )}
 
 
         {/* =========================
-            交流会作成フォーム
+            メインレイアウト
             ========================= */}
 
-        <form
-          onSubmit={handleSubmit}
-          className="event-create-form"
-        >
-
-          {/* 交流会名 */}
-
-          <div className="form-group">
-
-            <label htmlFor="title">
-              交流会名
-            </label>
-
-            <input
-              id="title"
-              type="text"
-              value={title}
-              onChange={(event) =>
-                setTitle(event.target.value)
-              }
-              placeholder="例：東京ポケモン交流会"
-              required
-            />
-
-          </div>
-
-
-          {/* 説明 */}
-
-          <div className="form-group">
-
-            <label htmlFor="description">
-              説明
-            </label>
-
-            <textarea
-              id="description"
-              value={description}
-              onChange={(event) =>
-                setDescription(event.target.value)
-              }
-              placeholder="交流会の内容を入力してください"
-              rows={5}
-            />
-
-          </div>
-
-
-          {/* 開催日時 */}
-
-          <div className="form-group">
-
-            <label htmlFor="eventDate">
-              開催日時
-            </label>
-
-            <input
-              id="eventDate"
-              type="datetime-local"
-              value={eventDate}
-              onChange={(event) =>
-                setEventDate(event.target.value)
-              }
-              required
-            />
-
-          </div>
-
-
-          {/* 開催場所 */}
-
-          <div className="form-group">
-
-            <label htmlFor="location">
-              開催場所
-            </label>
-
-            <input
-              id="location"
-              type="text"
-              value={location}
-              onChange={(event) =>
-                setLocation(event.target.value)
-              }
-              placeholder="例：東京・池袋"
-              required
-            />
-
-          </div>
-
-
-          {/* 定員 */}
-
-          <div className="form-group">
-
-            <label htmlFor="capacity">
-              定員
-            </label>
-
-            <input
-              id="capacity"
-              type="number"
-              min="1"
-              value={capacity}
-              onChange={(event) =>
-                setCapacity(event.target.value)
-              }
-              required
-            />
-
-          </div>
-
-
-          {/* 参加料金 */}
-
-          <div className="form-group">
-
-            <label htmlFor="participationFee">
-              参加料金（円）
-            </label>
-
-            <input
-              id="participationFee"
-              type="number"
-              min="0"
-              value={participationFee}
-              onChange={(event) =>
-                setParticipationFee(event.target.value)
-              }
-              required
-            />
-
-          </div>
+        <div className="event-create-layout">
 
 
           {/* =========================
-              交流会画像
+              左：入力フォーム
               ========================= */}
 
-          <div className="form-group">
-
-            <label htmlFor="eventImage">
-              交流会画像
-            </label>
-
-            <input
-              id="eventImage"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={handleImageChange}
-            />
-
-            <p>
-              JPG、PNG、WebP / 5MB以下
-            </p>
+          <form
+            onSubmit={handleSubmit}
+            className="event-create-form"
+          >
 
 
-            {imagePreview && (
+            {/* =========================
+                基本情報
+                ========================= */}
 
-              <div style={{ marginTop: "12px" }}>
+            <section className="event-create-card">
 
-                <img
-                  src={imagePreview}
-                  alt="交流会画像プレビュー"
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    maxWidth: "400px",
-                    height: "220px",
-                    objectFit: "cover",
-                    borderRadius: "12px",
-                    border: "1px solid #ddd",
-                  }}
-                />
+              <div className="event-create-section-header">
+
+                <div className="event-create-section-icon">
+                  ✦
+                </div>
+
+                <div>
+
+                  <h2>
+                    基本情報
+                  </h2>
+
+                  <p>
+                    交流会の名前や内容を設定します
+                  </p>
+
+                </div>
 
               </div>
 
-            )}
 
-          </div>
+              {/* 交流会名 */}
 
+              <div className="event-create-field">
 
-          {/* ボタン */}
+                <label htmlFor="title">
 
-          <div className="event-button-area">
+                  交流会名
 
-            <button
-              type="button"
-              className="button"
-              onClick={() => navigate("/events")}
-              disabled={creating}
-            >
-              キャンセル
-            </button>
+                  <span className="required-mark">
+                    必須
+                  </span>
+
+                </label>
 
 
-            <button
-              type="submit"
-              className="button button-primary"
-              disabled={creating}
-            >
+                <input
+                  id="title"
+                  className="event-create-input"
+                  type="text"
+                  value={title}
+                  onChange={(event) =>
+                    setTitle(
+                      event.target.value
+                    )
+                  }
+                  placeholder="例：東京ポケモン交流会"
+                  required
+                />
 
-              {creating
-                ? "作成中..."
-                : "交流会を作成"
-              }
 
-            </button>
+                <p className="event-create-help">
+                  参加する人が分かりやすい名前を付けましょう。
+                </p>
 
-          </div>
+              </div>
 
-        </form>
+
+              {/* 説明 */}
+
+              <div className="event-create-field">
+
+                <label htmlFor="description">
+                  交流会の説明
+                </label>
+
+
+                <textarea
+                  id="description"
+                  className="event-create-input event-create-textarea"
+                  value={description}
+                  onChange={(event) =>
+                    setDescription(
+                      event.target.value
+                    )
+                  }
+                  placeholder="交流会の内容、対象者、予定していることなどを入力してください"
+                  rows={6}
+                />
+
+
+                <p className="event-create-help">
+                  初めて参加する人にも内容が伝わるように書くと親切です。
+                </p>
+
+              </div>
+
+            </section>
+
+
+            {/* =========================
+                開催情報
+                ========================= */}
+
+            <section className="event-create-card">
+
+              <div className="event-create-section-header">
+
+                <div className="event-create-section-icon">
+                  📅
+                </div>
+
+                <div>
+
+                  <h2>
+                    開催情報
+                  </h2>
+
+                  <p>
+                    いつ・どこで開催するか設定します
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              <div className="event-create-grid">
+
+
+                {/* 開催日時 */}
+
+                <div className="event-create-field">
+
+                  <label htmlFor="eventDate">
+
+                    開催日時
+
+                    <span className="required-mark">
+                      必須
+                    </span>
+
+                  </label>
+
+
+                  <input
+                    id="eventDate"
+                    className="event-create-input"
+                    type="datetime-local"
+                    value={eventDate}
+                    onChange={(event) =>
+                      setEventDate(
+                        event.target.value
+                      )
+                    }
+                    required
+                  />
+
+                </div>
+
+
+                {/* 開催場所 */}
+
+                <div className="event-create-field">
+
+                  <label htmlFor="location">
+
+                    開催場所
+
+                    <span className="required-mark">
+                      必須
+                    </span>
+
+                  </label>
+
+
+                  <input
+                    id="location"
+                    className="event-create-input"
+                    type="text"
+                    value={location}
+                    onChange={(event) =>
+                      setLocation(
+                        event.target.value
+                      )
+                    }
+                    placeholder="例：東京・池袋"
+                    required
+                  />
+
+                </div>
+
+              </div>
+
+            </section>
+
+
+            {/* =========================
+                募集設定
+                ========================= */}
+
+            <section className="event-create-card">
+
+              <div className="event-create-section-header">
+
+                <div className="event-create-section-icon">
+                  👥
+                </div>
+
+                <div>
+
+                  <h2>
+                    募集設定
+                  </h2>
+
+                  <p>
+                    参加人数と料金を設定します
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              <div className="event-create-grid">
+
+
+                {/* 定員 */}
+
+                <div className="event-create-field">
+
+                  <label htmlFor="capacity">
+
+                    定員
+
+                    <span className="required-mark">
+                      必須
+                    </span>
+
+                  </label>
+
+
+                  <div className="event-create-input-with-unit">
+
+                    <input
+                      id="capacity"
+                      className="event-create-input"
+                      type="number"
+                      min="1"
+                      value={capacity}
+                      onChange={(event) =>
+                        setCapacity(
+                          event.target.value
+                        )
+                      }
+                      required
+                    />
+
+                    <span>
+                      名
+                    </span>
+
+                  </div>
+
+
+                  <p className="event-create-help">
+                    最大参加人数を設定してください。
+                  </p>
+
+                </div>
+
+
+                {/* 参加料金 */}
+
+                <div className="event-create-field">
+
+                  <label htmlFor="participationFee">
+
+                    参加料金
+
+                    <span className="required-mark">
+                      必須
+                    </span>
+
+                  </label>
+
+
+                  <div className="event-create-input-with-unit">
+
+                    <input
+                      id="participationFee"
+                      className="event-create-input"
+                      type="number"
+                      min="0"
+                      value={participationFee}
+                      onChange={(event) =>
+                        setParticipationFee(
+                          event.target.value
+                        )
+                      }
+                      required
+                    />
+
+                    <span>
+                      円
+                    </span>
+
+                  </div>
+
+
+                  <p className="event-create-help">
+                    無料の場合は「0」と入力してください。
+                  </p>
+
+                </div>
+
+              </div>
+
+            </section>
+
+
+            {/* =========================
+                交流会画像
+                ========================= */}
+
+            <section className="event-create-card">
+
+              <div className="event-create-section-header">
+
+                <div className="event-create-section-icon">
+                  🖼️
+                </div>
+
+                <div>
+
+                  <h2>
+                    交流会画像
+                  </h2>
+
+                  <p>
+                    一覧画面や詳細画面に表示されます
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              <div className="event-create-upload">
+
+                <input
+                  id="eventImage"
+                  className="event-create-file-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleImageChange}
+                />
+
+
+                {imagePreview ? (
+
+                  <div className="event-create-image-preview">
+
+                    <img
+                      src={imagePreview}
+                      alt="交流会画像プレビュー"
+                    />
+
+                    <div className="event-create-image-overlay">
+
+                      <label
+                        htmlFor="eventImage"
+                        className="event-create-change-image"
+                      >
+                        📷 画像を変更
+                      </label>
+
+                    </div>
+
+                  </div>
+
+                ) : (
+
+                  <label
+                    htmlFor="eventImage"
+                    className="event-create-upload-empty"
+                  >
+
+                    <span className="event-create-upload-icon">
+                      📷
+                    </span>
+
+                    <strong>
+                      画像を選択
+                    </strong>
+
+                    <span>
+                      JPG / PNG / WebP
+                    </span>
+
+                    <small>
+                      最大 5MB
+                    </small>
+
+                  </label>
+
+                )}
+
+              </div>
+
+
+              {selectedImage && (
+
+                <div className="event-create-file-info">
+
+                  <span className="event-create-file-check">
+                    ✓
+                  </span>
+
+                  <span className="event-create-file-name">
+                    {selectedImage.name}
+                  </span>
+
+                </div>
+
+              )}
+
+            </section>
+
+
+            {/* =========================
+                ボタン
+                ========================= */}
+
+            <div className="event-create-actions">
+
+              <button
+                type="button"
+                className="event-create-button event-create-button-secondary"
+                onClick={() =>
+                  navigate("/events")
+                }
+                disabled={creating}
+              >
+                キャンセル
+              </button>
+
+
+              <button
+                type="submit"
+                className="event-create-button event-create-button-primary"
+                disabled={creating}
+              >
+
+                {creating ? (
+                  <>
+                    <span className="event-create-spinner"></span>
+                    作成中...
+                  </>
+                ) : (
+                  <>
+                    <span>＋</span>
+                    交流会を作成
+                  </>
+                )}
+
+              </button>
+
+            </div>
+
+          </form>
+
+
+          {/* =========================
+              右：プレビュー
+              ========================= */}
+
+          <aside className="event-create-preview">
+
+            <div className="event-create-preview-label">
+              LIVE PREVIEW
+            </div>
+
+
+            <div className="event-create-preview-heading">
+
+              <div>
+
+                <h2>
+                  交流会プレビュー
+                </h2>
+
+                <p>
+                  入力した内容がここに反映されます。
+                </p>
+
+              </div>
+
+              <span className="event-create-preview-dot"></span>
+
+            </div>
+
+
+            {/* 実際の交流会カードに近いプレビュー */}
+
+            <div className="event-preview-card">
+
+
+              {/* プレビュー画像 */}
+
+              {imagePreview ? (
+
+                <div className="event-preview-image">
+
+                  <img
+                    src={imagePreview}
+                    alt="プレビュー"
+                  />
+
+                </div>
+
+              ) : (
+
+                <div className="event-preview-image event-preview-image-empty">
+
+                  <span>
+                    📷
+                  </span>
+
+                  <small>
+                    交流会画像
+                  </small>
+
+                </div>
+
+              )}
+
+
+              {/* プレビュー本文 */}
+
+              <div className="event-preview-content">
+
+                <div className="event-preview-tag">
+                  PokeMeet
+                </div>
+
+
+                <h3>
+                  {title.trim() ||
+                    "交流会名を入力してください"}
+                </h3>
+
+
+                <div className="event-preview-info">
+
+
+                  <div>
+
+                    <span>
+                      📅
+                    </span>
+
+                    <p>
+                      {getPreviewDate()}
+                    </p>
+
+                  </div>
+
+
+                  <div>
+
+                    <span>
+                      📍
+                    </span>
+
+                    <p>
+                      {location.trim() ||
+                        "開催場所を入力してください"}
+                    </p>
+
+                  </div>
+
+
+                  <div>
+
+                    <span>
+                      👥
+                    </span>
+
+                    <p>
+                      定員 {capacity || "0"}名
+                    </p>
+
+                  </div>
+
+
+                  <div>
+
+                    <span>
+                      💴
+                    </span>
+
+                    <p>
+                      {Number(
+                        participationFee || 0
+                      ).toLocaleString()}円
+                    </p>
+
+                  </div>
+
+                </div>
+
+
+                {description.trim() && (
+
+                  <p className="event-preview-description-text">
+                    {description}
+                  </p>
+
+                )}
+
+              </div>
+
+            </div>
+
+
+            {/* 補足 */}
+
+            <div className="event-create-preview-tip">
+
+              <span>
+                💡
+              </span>
+
+              <p>
+                交流会の雰囲気が伝わる画像や、分かりやすい説明を設定すると参加者が内容を確認しやすくなります。
+              </p>
+
+            </div>
+
+          </aside>
+
+        </div>
 
       </div>
 
     </main>
-
   );
-
 }
 
 
