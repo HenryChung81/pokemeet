@@ -552,9 +552,12 @@ function EventDetailPage() {
      表示用データ
      ======================================================= */
 
-  const cityImage =
-    getCityImage(event.location);
-
+const cityImage =
+  event.image_url
+    ? `http://127.0.0.1:8000${event.image_url}`
+    : getCityImage(
+        event.location
+      );
 
   const cityClass =
     getCityClass(event.location);
