@@ -13,4 +13,5 @@ export interface Event {
   participant_count: number;
   remaining_slots: number;
   is_joined: boolean;
+  image_url: string | null;
 }

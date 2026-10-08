@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.routers import users
 from app.routers import auth
@@ -8,6 +11,21 @@ from app.routers import events
 
 # FastAPIアプリ本体
 app = FastAPI()
+
+
+# 交流会画像保存用フォルダを作成する
+Path("uploads/events").mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+
+# アップロードした画像をブラウザから表示できるようにする
+app.mount(
+    "/uploads",
+    StaticFiles(directory="uploads"),
+    name="uploads"
+)
 
 
 # ReactからFastAPIへのアクセスを許可する

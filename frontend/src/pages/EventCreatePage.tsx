@@ -15,6 +15,9 @@ function EventCreatePage() {
   const [capacity, setCapacity] = useState("20");
   const [participationFee, setParticipationFee] = useState("0");
 
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
@@ -84,6 +87,94 @@ function EventCreatePage() {
 
 
   /* =========================
+     画像プレビューの後片付け
+     ========================= */
+
+  useEffect(() => {
+
+    return () => {
+
+      if (imagePreview) {
+
+        URL.revokeObjectURL(imagePreview);
+
+      }
+
+    };
+
+  }, [imagePreview]);
+
+
+  /* =========================
+     画像選択
+     ========================= */
+
+  const handleImageChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+
+    setError("");
+
+
+    const file = event.target.files?.[0] ?? null;
+
+
+    if (!file) {
+
+      setSelectedImage(null);
+      setImagePreview("");
+
+      return;
+    }
+
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
+
+
+    if (!allowedTypes.includes(file.type)) {
+
+      setSelectedImage(null);
+      setImagePreview("");
+
+      event.target.value = "";
+
+      setError(
+        "JPG、PNG、WebP画像のみ選択できます"
+      );
+
+      return;
+    }
+
+
+    if (file.size > 5 * 1024 * 1024) {
+
+      setSelectedImage(null);
+      setImagePreview("");
+
+      event.target.value = "";
+
+      setError(
+        "画像サイズは5MB以下にしてください"
+      );
+
+      return;
+    }
+
+
+    setSelectedImage(file);
+
+    setImagePreview(
+      URL.createObjectURL(file)
+    );
+
+  };
+
+
+  /* =========================
      交流会作成
      ========================= */
 
@@ -145,6 +236,10 @@ function EventCreatePage() {
       setCreating(true);
 
 
+      /* =========================
+         交流会を作成
+         ========================= */
+
       const response = await fetch(
         "http://127.0.0.1:8000/events",
         {
@@ -183,7 +278,74 @@ function EventCreatePage() {
       }
 
 
-      navigate("/events");
+      /* =========================
+         作成した交流会のID取得
+         ========================= */
+
+      const eventId = data.event_id;
+
+
+      if (!eventId) {
+
+        setError(
+          "交流会は作成されましたが、交流会IDを取得できませんでした"
+        );
+
+        return;
+      }
+
+
+      /* =========================
+         画像アップロード
+         ========================= */
+
+      if (selectedImage) {
+
+        const formData = new FormData();
+
+        formData.append(
+          "image",
+          selectedImage
+        );
+
+
+        const imageResponse = await fetch(
+          `http://127.0.0.1:8000/events/${eventId}/image`,
+          {
+            method: "POST",
+
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem(
+                "access_token"
+              )}`,
+            },
+
+            body: formData,
+          }
+        );
+
+
+        const imageData = await imageResponse.json();
+
+
+        if (!imageResponse.ok) {
+
+          setError(
+            imageData.detail ||
+            "交流会は作成されましたが、画像のアップロードに失敗しました"
+          );
+
+          return;
+        }
+
+      }
+
+
+      /* =========================
+         作成完了
+         ========================= */
+
+      navigate(`/events/${eventId}`);
 
     } catch (error) {
 
@@ -419,6 +581,53 @@ function EventCreatePage() {
           </div>
 
 
+          {/* =========================
+              交流会画像
+              ========================= */}
+
+          <div className="form-group">
+
+            <label htmlFor="eventImage">
+              交流会画像
+            </label>
+
+            <input
+              id="eventImage"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleImageChange}
+            />
+
+            <p>
+              JPG、PNG、WebP / 5MB以下
+            </p>
+
+
+            {imagePreview && (
+
+              <div style={{ marginTop: "12px" }}>
+
+                <img
+                  src={imagePreview}
+                  alt="交流会画像プレビュー"
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    maxWidth: "400px",
+                    height: "220px",
+                    objectFit: "cover",
+                    borderRadius: "12px",
+                    border: "1px solid #ddd",
+                  }}
+                />
+
+              </div>
+
+            )}
+
+          </div>
+
+
           {/* ボタン */}
 
           <div className="event-button-area">
@@ -427,6 +636,7 @@ function EventCreatePage() {
               type="button"
               className="button"
               onClick={() => navigate("/events")}
+              disabled={creating}
             >
               キャンセル
             </button>
