@@ -793,3 +793,198 @@ def leave_event(
             "message": "交流会への参加をキャンセルしました"
 
         }
+
+# =========================================================
+# 交流会編集
+# =========================================================
+
+@router.put("/events/{event_id}")
+def update_event(
+    event_id: int,
+    event_data: EventCreate,
+    user_id: int = Depends(get_current_user_id)
+):
+    # -------------------------------------------------
+    # 入力チェック
+    # -------------------------------------------------
+
+    if event_data.capacity <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="定員は1名以上にしてください"
+        )
+
+    if event_data.participation_fee < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="参加料金は0円以上にしてください"
+        )
+
+    # -------------------------------------------------
+    # 交流会と作成者を確認
+    # -------------------------------------------------
+
+    with engine.begin() as connection:
+
+        result = connection.execute(
+            text("""
+                SELECT
+                    e.created_by,
+                    COUNT(ep.id) AS participant_count
+                FROM events e
+                LEFT JOIN event_participants ep
+                    ON e.id = ep.event_id
+                WHERE e.id = :event_id
+                GROUP BY e.id, e.created_by
+            """),
+            {
+                "event_id": event_id
+            }
+        )
+
+        event = result.fetchone()
+
+        if event is None:
+            raise HTTPException(
+                status_code=404,
+                detail="交流会が見つかりません"
+            )
+
+        # 作成者本人だけ編集可能
+        if event.created_by != user_id:
+            raise HTTPException(
+                status_code=403,
+                detail="この交流会を編集する権限がありません"
+            )
+
+        # 参加者数より少ない定員には変更できない
+        if event_data.capacity < event.participant_count:
+            raise HTTPException(
+                status_code=400,
+                detail="現在の参加者数より少ない定員には変更できません"
+            )
+
+        # -------------------------------------------------
+        # 交流会情報を更新
+        # -------------------------------------------------
+
+        connection.execute(
+            text("""
+                UPDATE events
+                SET
+                    title = :title,
+                    description = :description,
+                    event_date = :event_date,
+                    location = :location,
+                    capacity = :capacity,
+                    participation_fee = :participation_fee
+                WHERE id = :event_id
+            """),
+            {
+                "event_id": event_id,
+                "title": event_data.title,
+                "description": event_data.description,
+                "event_date": event_data.event_date,
+                "location": event_data.location,
+                "capacity": event_data.capacity,
+                "participation_fee": event_data.participation_fee
+            }
+        )
+
+    return {
+        "message": "交流会を更新しました"
+    }
+
+
+# =========================================================
+# 交流会削除
+# =========================================================
+
+@router.delete("/events/{event_id}")
+def delete_event(
+    event_id: int,
+    user_id: int = Depends(get_current_user_id)
+):
+    # -------------------------------------------------
+    # 交流会と作成者を確認
+    # -------------------------------------------------
+
+    with engine.begin() as connection:
+
+        result = connection.execute(
+            text("""
+                SELECT
+                    created_by,
+                    image_url
+                FROM events
+                WHERE id = :event_id
+            """),
+            {
+                "event_id": event_id
+            }
+        )
+
+        event = result.fetchone()
+
+        if event is None:
+            raise HTTPException(
+                status_code=404,
+                detail="交流会が見つかりません"
+            )
+
+        # 作成者本人だけ削除可能
+        if event.created_by != user_id:
+            raise HTTPException(
+                status_code=403,
+                detail="この交流会を削除する権限がありません"
+            )
+
+        old_image_url = event.image_url
+
+        # -------------------------------------------------
+        # 参加者情報を先に削除
+        # -------------------------------------------------
+
+        connection.execute(
+            text("""
+                DELETE FROM event_participants
+                WHERE event_id = :event_id
+            """),
+            {
+                "event_id": event_id
+            }
+        )
+
+        # -------------------------------------------------
+        # 交流会を削除
+        # -------------------------------------------------
+
+        connection.execute(
+            text("""
+                DELETE FROM events
+                WHERE id = :event_id
+            """),
+            {
+                "event_id": event_id
+            }
+        )
+
+    # -------------------------------------------------
+    # 交流会画像も削除
+    # -------------------------------------------------
+
+    if old_image_url:
+        image_path = Path(old_image_url.lstrip("/"))
+
+        if (
+            image_path.is_file()
+            and UPLOAD_DIR.resolve() in image_path.resolve().parents
+        ):
+            try:
+                image_path.unlink()
+            except OSError:
+                pass
+
+    return {
+        "message": "交流会を削除しました"
+    }
