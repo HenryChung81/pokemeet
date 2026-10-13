@@ -753,6 +753,17 @@ function EventDetailPage() {
                       <li
                         key={participant.user_id}
                         className="event-participant-item"
+                        role="link"
+                        tabIndex={0}
+                        aria-label={`${participant.nickname}のプロフィールを見る`}
+                        onClick={() =>
+                          navigate(`/users/${participant.user_id}`)
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            navigate(`/users/${participant.user_id}`);
+                          }
+                        }}
                       >
                         <span aria-hidden="true">👤</span>
                         {participant.nickname}

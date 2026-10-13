@@ -1752,3 +1752,21 @@
   font-weight: 600;
 }
 
+/* 参加者一覧：プロフィールへのリンク */
+.event-participant-item {
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.event-participant-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.event-participant-item:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
