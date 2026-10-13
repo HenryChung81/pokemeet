@@ -25,49 +25,17 @@ import "../App.css";
    都市画像
    ========================================================= */
 function getCityImage(location: string): string {
-  if (location.includes("池袋")) {
-    return ikebukuroImage;
-  }
-
-  if (location.includes("新宿")) {
-    return shinjukuImage;
-  }
-
-  if (location.includes("渋谷")) {
-    return shibuyaImage;
-  }
-
-  if (location.includes("上野")) {
-    return uenoImage;
-  }
-
-  if (location.includes("名古屋")) {
-    return nagoyaImage;
-  }
-
-  if (location.includes("大阪")) {
-    return osakaImage;
-  }
-
-  if (location.includes("秋葉原")) {
-    return akihabaraImage;
-  }
-
-  if (location.includes("中野")) {
-    return nakanoImage;
-  }
-
-  if (location.includes("台北")) {
-    return taipeiImage;
-  }
-
-  if (location.includes("横浜")) {
-    return yokohamaImage;
-  }
-
-  if (location.includes("吉祥寺")) {
-    return kichijojiImage;
-  }
+  if (location.includes("池袋")) return ikebukuroImage;
+  if (location.includes("新宿")) return shinjukuImage;
+  if (location.includes("渋谷")) return shibuyaImage;
+  if (location.includes("上野")) return uenoImage;
+  if (location.includes("名古屋")) return nagoyaImage;
+  if (location.includes("大阪")) return osakaImage;
+  if (location.includes("秋葉原")) return akihabaraImage;
+  if (location.includes("中野")) return nakanoImage;
+  if (location.includes("台北")) return taipeiImage;
+  if (location.includes("横浜")) return yokohamaImage;
+  if (location.includes("吉祥寺")) return kichijojiImage;
 
   return defaultImage;
 }
@@ -76,37 +44,14 @@ function getCityImage(location: string): string {
    都市カラー
    ========================================================= */
 function getCityClass(location: string): string {
-  if (location.includes("池袋")) {
-    return "city-ikebukuro";
-  }
-
-  if (location.includes("新宿")) {
-    return "city-shinjuku";
-  }
-
-  if (location.includes("渋谷")) {
-    return "city-shibuya";
-  }
-
-  if (location.includes("上野")) {
-    return "city-ueno";
-  }
-
-  if (location.includes("名古屋")) {
-    return "city-nagoya";
-  }
-
-  if (location.includes("大阪")) {
-    return "city-osaka";
-  }
-
-  if (location.includes("秋葉原")) {
-    return "city-akihabara";
-  }
-
-  if (location.includes("中野")) {
-    return "city-nakano";
-  }
+  if (location.includes("池袋")) return "city-ikebukuro";
+  if (location.includes("新宿")) return "city-shinjuku";
+  if (location.includes("渋谷")) return "city-shibuya";
+  if (location.includes("上野")) return "city-ueno";
+  if (location.includes("名古屋")) return "city-nagoya";
+  if (location.includes("大阪")) return "city-osaka";
+  if (location.includes("秋葉原")) return "city-akihabara";
+  if (location.includes("中野")) return "city-nakano";
 
   return "city-default";
 }
@@ -149,8 +94,9 @@ function EventDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [joining, setJoining] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  // ログインユーザーID（交流会の作成者かどうかを判定する）
+  // ログインユーザーID
   const [currentUserId, setCurrentUserId] =
     useState<number | null>(null);
 
@@ -205,7 +151,7 @@ function EventDetailPage() {
   }, []);
 
   /* =======================================================
-     イベント取得
+     交流会情報取得
      ======================================================= */
   useEffect(() => {
     const fetchEvent = async () => {
@@ -255,14 +201,10 @@ function EventDetailPage() {
   }, [eventId]);
 
   /* =======================================================
-     参加登録
+     交流会に参加
      ======================================================= */
   const handleJoinEvent = async () => {
-    if (!event) {
-      return;
-    }
-
-    if (event.is_joined) {
+    if (!event || event.is_joined) {
       return;
     }
 
@@ -294,9 +236,7 @@ function EventDetailPage() {
         );
       }
 
-      /* -----------------------------------------------
-         参加後に最新情報を取得
-         ----------------------------------------------- */
+      // 参加後に最新の交流会情報を取得
       const eventResponse = await fetch(
         `http://127.0.0.1:8000/events/${event.id}`,
         {
@@ -310,8 +250,7 @@ function EventDetailPage() {
 
       if (!eventResponse.ok) {
         throw new Error(
-          updatedEvent.detail ||
-            "参加情報の取得に失敗しました"
+          updatedEvent.detail || "参加情報の取得に失敗しました"
         );
       }
 
@@ -326,6 +265,70 @@ function EventDetailPage() {
       );
     } finally {
       setJoining(false);
+    }
+  };
+
+  /* =======================================================
+     交流会を削除
+     ======================================================= */
+  const handleDeleteEvent = async () => {
+    if (!event) {
+      return;
+    }
+
+    // 削除前に確認する
+    const confirmed = window.confirm(
+      `「${event.title}」を削除しますか？\n削除すると元に戻せません。`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const token = localStorage.getItem("access_token");
+
+    if (!token) {
+      window.alert(
+        "ログイン情報がありません。再ログインしてください。"
+      );
+      return;
+    }
+
+    try {
+      setDeleting(true);
+
+      const response = await fetch(
+        `http://127.0.0.1:8000/events/${event.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data.detail || "交流会の削除に失敗しました。"
+        );
+      }
+
+      window.alert("交流会を削除しました。");
+
+      // 削除後は交流会一覧に戻る
+      navigate("/events");
+    } catch (error) {
+      console.error(error);
+
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : "交流会の削除に失敗しました。"
+      );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -371,17 +374,20 @@ function EventDetailPage() {
   /* =======================================================
      表示用データ
      ======================================================= */
+
+  // アップロード画像があれば優先して表示する
   const cityImage = event.image_url
     ? `http://127.0.0.1:8000${event.image_url}`
     : getCityImage(event.location);
 
   const cityClass = getCityClass(event.location);
 
-  // 作成者本人にだけ編集ボタンを表示する
+  // 作成者本人かどうかを判定
   const canEditEvent =
     currentUserId !== null &&
     Number(event.created_by) === currentUserId;
 
+  // 参加者の割合
   const participantPercentage =
     event.capacity > 0
       ? Math.min(
@@ -392,10 +398,7 @@ function EventDetailPage() {
         )
       : 0;
 
-  /*
-   * CSSのカスタムプロパティとして
-   * 背景画像を渡す。
-   */
+  // CSSに背景画像を渡す
   const imageStyle = cityImage
     ? ({
         "--detail-image": `url(${cityImage})`,
@@ -408,9 +411,7 @@ function EventDetailPage() {
   return (
     <main className="page">
       <div className="page-container">
-        {/* =================================================
-            戻る
-            ================================================= */}
+        {/* 一覧に戻る */}
         <button
           className="back-link"
           onClick={() => navigate("/events")}
@@ -418,13 +419,9 @@ function EventDetailPage() {
           ← 交流会一覧に戻る
         </button>
 
-        {/* =================================================
-            詳細カード
-            ================================================= */}
+        {/* 交流会詳細カード */}
         <article className={`event-detail-card ${cityClass}`}>
-          {/* ===============================================
-              街画像
-              =============================================== */}
+          {/* 街画像 */}
           {cityImage && (
             <div
               className="event-detail-image"
@@ -442,13 +439,9 @@ function EventDetailPage() {
             </div>
           )}
 
-          {/* ===============================================
-              本文
-              =============================================== */}
+          {/* 本文 */}
           <div className="event-detail-content">
-            {/* =============================================
-                タイトル
-                ============================================= */}
+            {/* タイトル */}
             <div className="event-detail-heading">
               <span className="event-detail-category">
                 ポケモン交流会
@@ -459,11 +452,9 @@ function EventDetailPage() {
               </h1>
             </div>
 
-            {/* =============================================
-                基本情報
-                ============================================= */}
+            {/* 基本情報 */}
             <div className="event-detail-info">
-              {/* 日時 */}
+              {/* 開催日時 */}
               <div className="event-detail-info-item">
                 <span className="event-detail-info-icon">
                   📅
@@ -480,7 +471,7 @@ function EventDetailPage() {
                 </div>
               </div>
 
-              {/* 場所 */}
+              {/* 開催場所 */}
               <div className="event-detail-info-item">
                 <span className="event-detail-info-icon">
                   📍
@@ -530,16 +521,13 @@ function EventDetailPage() {
               </div>
             </div>
 
-            {/* =============================================
-                参加者状況
-                ============================================= */}
+            {/* 参加者状況 */}
             <section className="event-detail-section">
               <h2>👥 参加者状況</h2>
 
               <div className="participant-status">
                 <div className="participant-count">
                   <strong>{event.participant_count}</strong>
-
                   <span>/ {event.capacity}名</span>
                 </div>
 
@@ -560,9 +548,7 @@ function EventDetailPage() {
               </div>
             </section>
 
-            {/* =============================================
-                交流会について
-                ============================================= */}
+            {/* 交流会の説明 */}
             <section className="event-detail-section">
               <h2>この交流会について</h2>
 
@@ -572,9 +558,7 @@ function EventDetailPage() {
               </p>
             </section>
 
-            {/* =============================================
-                交流会情報
-                ============================================= */}
+            {/* 交流会情報 */}
             <section className="event-detail-section">
               <h2>交流会情報</h2>
 
@@ -591,23 +575,35 @@ function EventDetailPage() {
               </div>
             </section>
 
-            {/* =============================================
-                操作ボタン
-                ============================================= */}
+            {/* 操作ボタン */}
             <div className="event-detail-actions">
-              {/* 作成者本人にだけ編集ボタンを表示 */}
+              {/* 作成者本人だけに編集・削除ボタンを表示 */}
               {canEditEvent && (
-                <button
-                  type="button"
-                  className="button button-secondary"
-                  onClick={() =>
-                    navigate(`/events/${event.id}/edit`)
-                  }
-                >
-                  ✏️ 交流会を編集
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() =>
+                      navigate(`/events/${event.id}/edit`)
+                    }
+                  >
+                    ✏️ 交流会を編集
+                  </button>
+
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={handleDeleteEvent}
+                    disabled={deleting}
+                  >
+                    {deleting
+                      ? "削除中..."
+                      : "🗑️ 交流会を削除"}
+                  </button>
+                </>
               )}
 
+              {/* 参加ボタン */}
               <button
                 className="button button-primary event-join-button"
                 onClick={handleJoinEvent}
@@ -633,6 +629,7 @@ function EventDetailPage() {
                 <span className="button-arrow">→</span>
               </button>
 
+              {/* 一覧に戻る */}
               <button
                 className="button button-secondary"
                 onClick={() => navigate("/events")}
