@@ -21,9 +21,17 @@ import defaultImage from "../assets/cities/default.png";
 
 import "../App.css";
 
+const API_BASE = "http://127.0.0.1:8000";
+
+type EventParticipant = {
+  user_id: number;
+  nickname: string;
+};
+
 /* =========================================================
    都市画像
    ========================================================= */
+
 function getCityImage(location: string): string {
   if (location.includes("池袋")) return ikebukuroImage;
   if (location.includes("新宿")) return shinjukuImage;
@@ -43,6 +51,7 @@ function getCityImage(location: string): string {
 /* =========================================================
    都市カラー
    ========================================================= */
+
 function getCityClass(location: string): string {
   if (location.includes("池袋")) return "city-ikebukuro";
   if (location.includes("新宿")) return "city-shinjuku";
@@ -59,6 +68,7 @@ function getCityClass(location: string): string {
 /* =========================================================
    日時表示
    ========================================================= */
+
 function formatEventDate(dateString: string): string {
   const date = new Date(dateString);
 
@@ -75,6 +85,7 @@ function formatEventDate(dateString: string): string {
 /* =========================================================
    料金表示
    ========================================================= */
+
 function formatParticipationFee(fee: number): string {
   if (fee === 0) {
     return "無料";
@@ -86,6 +97,7 @@ function formatParticipationFee(fee: number): string {
 /* =========================================================
    イベント詳細ページ
    ========================================================= */
+
 function EventDetailPage() {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -93,6 +105,7 @@ function EventDetailPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [joining, setJoining] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -100,9 +113,25 @@ function EventDetailPage() {
   const [currentUserId, setCurrentUserId] =
     useState<number | null>(null);
 
+  // 管理者かどうか
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // 参加者一覧
+  const [participants, setParticipants] =
+    useState<EventParticipant[]>([]);
+  const [participantsLoading, setParticipantsLoading] =
+    useState(false);
+  const [participantsError, setParticipantsError] =
+    useState("");
+
+  // 参加登録・キャンセル時のメッセージ
+  const [actionError, setActionError] = useState("");
+  const [actionNotice, setActionNotice] = useState("");
+
   /* =======================================================
      ログインユーザー取得
      ======================================================= */
+
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
@@ -112,14 +141,11 @@ function EventDetailPage() {
           return;
         }
 
-        const response = await fetch(
-          "http://127.0.0.1:8000/me",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await fetch(`${API_BASE}/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!response.ok) {
           return;
@@ -127,6 +153,10 @@ function EventDetailPage() {
 
         const data = await response.json();
 
+        // ユーザーの権限を取得
+        setIsAdmin(data.role === "admin");
+
+        // ログインユーザーIDを取得
         const rawUserId =
           data.id ??
           data.user_id ??
@@ -151,8 +181,9 @@ function EventDetailPage() {
   }, []);
 
   /* =======================================================
-     交流会情報取得
+     交流会詳細取得
      ======================================================= */
+
   useEffect(() => {
     const fetchEvent = async () => {
       try {
@@ -160,14 +191,17 @@ function EventDetailPage() {
         setError("");
 
         if (!eventId) {
-          setError("交流会が見つかりません。");
-          return;
+          throw new Error("交流会が見つかりません。");
         }
 
         const token = localStorage.getItem("access_token");
 
+        if (!token) {
+          throw new Error("ログインしてください。");
+        }
+
         const response = await fetch(
-          `http://127.0.0.1:8000/events/${eventId}`,
+          `${API_BASE}/events/${eventId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -175,15 +209,15 @@ function EventDetailPage() {
           }
         );
 
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
 
         if (!response.ok) {
           throw new Error(
-            data.detail || "交流会の取得に失敗しました"
+            data.detail || "交流会の取得に失敗しました。"
           );
         }
 
-        setEvent(data);
+        setEvent(data as Event);
       } catch (error) {
         console.error(error);
 
@@ -201,25 +235,128 @@ function EventDetailPage() {
   }, [eventId]);
 
   /* =======================================================
-     交流会に参加
+     参加者一覧取得（管理者のみ）
      ======================================================= */
+
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      // 管理者以外は参加者一覧を取得しない
+      if (!isAdmin || !eventId) {
+        setParticipants([]);
+        setParticipantsError("");
+        setParticipantsLoading(false);
+        return;
+      }
+
+      const token = localStorage.getItem("access_token");
+
+      if (!token) {
+        setParticipantsError("ログインしてください。");
+        return;
+      }
+
+      try {
+        setParticipantsLoading(true);
+        setParticipantsError("");
+
+        const response = await fetch(
+          `${API_BASE}/events/${eventId}/participants`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(
+            data.detail || "参加者一覧の取得に失敗しました。"
+          );
+        }
+
+        setParticipants(
+          Array.isArray(data.participants)
+            ? data.participants
+            : []
+        );
+      } catch (error) {
+        console.error(error);
+
+        setParticipantsError(
+          error instanceof Error
+            ? error.message
+            : "参加者一覧の取得に失敗しました。"
+        );
+      } finally {
+        setParticipantsLoading(false);
+      }
+    };
+
+    fetchParticipants();
+  }, [eventId, isAdmin, event?.participant_count]);
+
+  /* =======================================================
+     交流会の最新情報を再取得
+     ======================================================= */
+
+  const refreshEvent = async (
+    id: number,
+    token: string
+  ): Promise<void> => {
+    const response = await fetch(
+      `${API_BASE}/events/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        data.detail || "交流会情報の更新に失敗しました。"
+      );
+    }
+
+    setEvent(data as Event);
+  };
+
+  /* =======================================================
+     参加登録
+     ======================================================= */
+
   const handleJoinEvent = async () => {
-    if (!event || event.is_joined) {
+    if (!event || joining) {
+      return;
+    }
+
+    if (event.is_joined) {
       return;
     }
 
     if (event.remaining_slots <= 0) {
+      setActionError("この交流会は満員です。");
+      return;
+    }
+
+    const token = localStorage.getItem("access_token");
+
+    if (!token) {
+      setActionError("ログインしてください。");
       return;
     }
 
     try {
       setJoining(true);
-      setError("");
-
-      const token = localStorage.getItem("access_token");
+      setActionError("");
+      setActionNotice("");
 
       const response = await fetch(
-        `http://127.0.0.1:8000/events/${event.id}/join`,
+        `${API_BASE}/events/${event.id}/join`,
         {
           method: "POST",
           headers: {
@@ -228,40 +365,24 @@ function EventDetailPage() {
         }
       );
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         throw new Error(
-          data.detail || "交流会への参加に失敗しました"
+          data.detail || "交流会への参加に失敗しました。"
         );
       }
 
-      // 参加後に最新の交流会情報を取得
-      const eventResponse = await fetch(
-        `http://127.0.0.1:8000/events/${event.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await refreshEvent(event.id, token);
 
-      const updatedEvent = await eventResponse.json();
-
-      if (!eventResponse.ok) {
-        throw new Error(
-          updatedEvent.detail || "参加情報の取得に失敗しました"
-        );
-      }
-
-      setEvent(updatedEvent);
+      setActionNotice("交流会に参加しました。");
     } catch (error) {
       console.error(error);
 
-      setError(
+      setActionError(
         error instanceof Error
           ? error.message
-          : "交流会への参加に失敗しました"
+          : "交流会への参加に失敗しました。"
       );
     } finally {
       setJoining(false);
@@ -269,14 +390,80 @@ function EventDetailPage() {
   };
 
   /* =======================================================
-     交流会を削除
+     参加キャンセル
      ======================================================= */
-  const handleDeleteEvent = async () => {
-    if (!event) {
+
+  const handleLeaveEvent = async () => {
+    if (!event || joining) {
       return;
     }
 
-    // 削除前に確認する
+    const confirmed = window.confirm(
+      `「${event.title}」への参加をキャンセルしますか？`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const token = localStorage.getItem("access_token");
+
+    if (!token) {
+      setActionError("ログインしてください。");
+      return;
+    }
+
+    try {
+      setJoining(true);
+      setActionError("");
+      setActionNotice("");
+
+      const response = await fetch(
+        `${API_BASE}/events/${event.id}/join`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data.detail ||
+            "参加のキャンセルに失敗しました。"
+        );
+      }
+
+      await refreshEvent(event.id, token);
+
+      setActionNotice(
+        "交流会への参加をキャンセルしました。"
+      );
+    } catch (error) {
+      console.error(error);
+
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : "参加のキャンセルに失敗しました。"
+      );
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  /* =======================================================
+     交流会削除
+     ======================================================= */
+
+  const handleDeleteEvent = async () => {
+    if (!event || deleting) {
+      return;
+    }
+
     const confirmed = window.confirm(
       `「${event.title}」を削除しますか？\n削除すると元に戻せません。`
     );
@@ -298,7 +485,7 @@ function EventDetailPage() {
       setDeleting(true);
 
       const response = await fetch(
-        `http://127.0.0.1:8000/events/${event.id}`,
+        `${API_BASE}/events/${event.id}`,
         {
           method: "DELETE",
           headers: {
@@ -316,8 +503,6 @@ function EventDetailPage() {
       }
 
       window.alert("交流会を削除しました。");
-
-      // 削除後は交流会一覧に戻る
       navigate("/events");
     } catch (error) {
       console.error(error);
@@ -335,6 +520,7 @@ function EventDetailPage() {
   /* =======================================================
      読み込み中
      ======================================================= */
+
   if (loading) {
     return (
       <main className="page">
@@ -350,6 +536,7 @@ function EventDetailPage() {
   /* =======================================================
      エラー
      ======================================================= */
+
   if (error || !event) {
     return (
       <main className="page">
@@ -360,6 +547,7 @@ function EventDetailPage() {
 
           <div className="page-actions">
             <button
+              type="button"
               className="button button-secondary"
               onClick={() => navigate("/events")}
             >
@@ -375,19 +563,23 @@ function EventDetailPage() {
      表示用データ
      ======================================================= */
 
-  // アップロード画像があれば優先して表示する
   const cityImage = event.image_url
-    ? `http://127.0.0.1:8000${event.image_url}`
+    ? event.image_url.startsWith("http")
+      ? event.image_url
+      : `${API_BASE}${
+          event.image_url.startsWith("/")
+            ? ""
+            : "/"
+        }${event.image_url}`
     : getCityImage(event.location);
 
   const cityClass = getCityClass(event.location);
 
-  // 作成者本人かどうかを判定
+  // 交流会の作成者本人に編集・削除ボタンを表示
   const canEditEvent =
     currentUserId !== null &&
     Number(event.created_by) === currentUserId;
 
-  // 参加者の割合
   const participantPercentage =
     event.capacity > 0
       ? Math.min(
@@ -398,21 +590,20 @@ function EventDetailPage() {
         )
       : 0;
 
-  // CSSに背景画像を渡す
-  const imageStyle = cityImage
-    ? ({
-        "--detail-image": `url(${cityImage})`,
-      } as CSSProperties)
-    : undefined;
+  const imageStyle = {
+    "--detail-image": `url("${cityImage}")`,
+  } as CSSProperties;
 
   /* =======================================================
      画面
      ======================================================= */
+
   return (
     <main className="page">
       <div className="page-container">
-        {/* 一覧に戻る */}
+        {/* 戻るボタン */}
         <button
+          type="button"
           className="back-link"
           onClick={() => navigate("/events")}
         >
@@ -422,24 +613,21 @@ function EventDetailPage() {
         {/* 交流会詳細カード */}
         <article className={`event-detail-card ${cityClass}`}>
           {/* 街画像 */}
-          {cityImage && (
-            <div
-              className="event-detail-image"
-              style={imageStyle}
-            >
-              <img
-                src={cityImage}
-                alt={`${event.location}の街並み`}
-              />
+          <div
+            className="event-detail-image"
+            style={imageStyle}
+          >
+            <img
+              src={cityImage}
+              alt={`${event.location}の街並み`}
+            />
 
-              <div className="city-label">
-                <span className="city-label-ball"></span>
-                {event.location}
-              </div>
+            <div className="city-label">
+              <span className="city-label-ball"></span>
+              {event.location}
             </div>
-          )}
+          </div>
 
-          {/* 本文 */}
           <div className="event-detail-content">
             {/* タイトル */}
             <div className="event-detail-heading">
@@ -454,7 +642,6 @@ function EventDetailPage() {
 
             {/* 基本情報 */}
             <div className="event-detail-info">
-              {/* 開催日時 */}
               <div className="event-detail-info-item">
                 <span className="event-detail-info-icon">
                   📅
@@ -471,7 +658,6 @@ function EventDetailPage() {
                 </div>
               </div>
 
-              {/* 開催場所 */}
               <div className="event-detail-info-item">
                 <span className="event-detail-info-icon">
                   📍
@@ -486,7 +672,6 @@ function EventDetailPage() {
                 </div>
               </div>
 
-              {/* 定員 */}
               <div className="event-detail-info-item">
                 <span className="event-detail-info-icon">
                   👥
@@ -501,7 +686,6 @@ function EventDetailPage() {
                 </div>
               </div>
 
-              {/* 参加料金 */}
               <div className="event-detail-info-item">
                 <span className="event-detail-info-icon">
                   💰
@@ -521,7 +705,7 @@ function EventDetailPage() {
               </div>
             </div>
 
-            {/* 参加者状況 */}
+            {/* 参加者状況：全ユーザーに表示 */}
             <section className="event-detail-section">
               <h2>👥 参加者状況</h2>
 
@@ -548,7 +732,38 @@ function EventDetailPage() {
               </div>
             </section>
 
-            {/* 交流会の説明 */}
+            {/* 参加者一覧：管理者のみ */}
+            {isAdmin && (
+              <section className="event-detail-section">
+                <h2>
+                  参加者一覧（{participants.length}名）
+                </h2>
+
+                {participantsLoading ? (
+                  <p>参加者を読み込んでいます...</p>
+                ) : participantsError ? (
+                  <p className="message" role="alert">
+                    {participantsError}
+                  </p>
+                ) : participants.length === 0 ? (
+                  <p>まだ参加者はいません。</p>
+                ) : (
+                  <ul className="event-participants-list">
+                    {participants.map((participant) => (
+                      <li
+                        key={participant.user_id}
+                        className="event-participant-item"
+                      >
+                        <span aria-hidden="true">👤</span>
+                        {participant.nickname}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )}
+
+            {/* 交流会について */}
             <section className="event-detail-section">
               <h2>この交流会について</h2>
 
@@ -558,26 +773,21 @@ function EventDetailPage() {
               </p>
             </section>
 
-            {/* 交流会情報 */}
-            <section className="event-detail-section">
-              <h2>交流会情報</h2>
+            {/* 操作結果メッセージ */}
+            {actionError && (
+              <p className="message" role="alert">
+                {actionError}
+              </p>
+            )}
 
-              <div className="event-meta">
-                <div>
-                  <span>交流会ID</span>
-                  <strong>#{event.id}</strong>
-                </div>
-
-                <div>
-                  <span>作成者ID</span>
-                  <strong>#{event.created_by}</strong>
-                </div>
-              </div>
-            </section>
+            {actionNotice && (
+              <p className="message" role="status">
+                {actionNotice}
+              </p>
+            )}
 
             {/* 操作ボタン */}
             <div className="event-detail-actions">
-              {/* 作成者本人だけに編集・削除ボタンを表示 */}
               {canEditEvent && (
                 <>
                   <button
@@ -603,34 +813,43 @@ function EventDetailPage() {
                 </>
               )}
 
-              {/* 参加ボタン */}
-              <button
-                className="button button-primary event-join-button"
-                onClick={handleJoinEvent}
-                disabled={
-                  joining ||
-                  event.is_joined ||
-                  event.remaining_slots <= 0
-                }
-              >
-                <span
-                  className="button-ball"
-                  aria-hidden="true"
-                ></span>
+              {event.is_joined ? (
+                <button
+                  type="button"
+                  className="button button-secondary event-join-button"
+                  onClick={handleLeaveEvent}
+                  disabled={joining}
+                >
+                  {joining
+                    ? "処理中..."
+                    : "参加をキャンセルする"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="button button-primary event-join-button"
+                  onClick={handleJoinEvent}
+                  disabled={
+                    joining || event.remaining_slots <= 0
+                  }
+                >
+                  <span
+                    className="button-ball"
+                    aria-hidden="true"
+                  ></span>
 
-                {joining
-                  ? "参加処理中..."
-                  : event.is_joined
-                    ? "参加済み"
+                  {joining
+                    ? "参加処理中..."
                     : event.remaining_slots <= 0
                       ? "満員"
                       : "交流会に参加する"}
 
-                <span className="button-arrow">→</span>
-              </button>
+                  <span className="button-arrow">→</span>
+                </button>
+              )}
 
-              {/* 一覧に戻る */}
               <button
+                type="button"
                 className="button button-secondary"
                 onClick={() => navigate("/events")}
               >
