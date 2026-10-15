@@ -1,4 +1,3 @@
-
 /* ページ全体 */
 .pm-profile-page {
   width: min(100% - 40px, 1000px);
@@ -66,6 +65,16 @@
   color: #ffffff;
   font-size: 32px;
   box-shadow: 0 8px 18px rgba(50, 104, 238, 0.2);
+  overflow: hidden;
+}
+
+/* アップロードしたプロフィール画像 */
+.pm-avatar-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
 }
 
 .pm-avatar-small {
@@ -259,6 +268,107 @@
   line-height: 1.7;
 }
 
+/* プロフィール画像の編集 */
+.pm-avatar-editor {
+  padding: 20px;
+  border: 1px solid #e1e8f5;
+  border-radius: 16px;
+  background: #fbfcff;
+}
+
+.pm-avatar-editor .pm-section-heading {
+  margin-bottom: 16px;
+}
+
+.pm-avatar-editor .pm-section-heading h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.pm-avatar-editor-main {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.pm-avatar-editor-preview {
+  flex-basis: 100px;
+  width: 100px;
+  height: 100px;
+  border-radius: 28px;
+  font-size: 40px;
+}
+
+.pm-avatar-editor-controls {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+}
+
+.pm-avatar-presets {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.pm-avatar-preset-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pm-avatar-preset {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 96px;
+  gap: 8px;
+  padding: 12px 8px;
+  border: 1px solid #e1e8f5;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #39445a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.pm-avatar-preset:hover:not(:disabled) {
+  border-color: #b7ccff;
+  background: #f8faff;
+}
+
+.pm-avatar-preset.is-selected {
+  border-color: #3268ee;
+  background: #f0f5ff;
+  box-shadow: 0 0 0 2px rgba(50, 104, 238, 0.1);
+}
+
+.pm-avatar-preset:focus-visible {
+  outline: 3px solid #8db2ff;
+  outline-offset: 3px;
+}
+
+.pm-avatar-preset:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.pm-avatar-preset-emoji {
+  font-size: 28px;
+  line-height: 1.2;
+}
+
 /* 公開設定 */
 .pm-visibility-card {
   margin-top: 20px;
@@ -376,16 +486,6 @@
   -webkit-line-clamp: 3;
 }
 
-.pm-user-card-link {
-  display: block;
-  margin-top: 22px;
-  padding-top: 16px;
-  border-top: 1px solid #edf0f6;
-  color: #3268ee;
-  font-size: 14px;
-  font-weight: 700;
-}
-
 /* ユーザーが存在しない場合 */
 .pm-empty-state {
   text-align: center;
@@ -470,5 +570,19 @@
 
   .pm-users-toolbar .pm-button {
     width: 100%;
+  }
+
+  .pm-avatar-editor-main {
+    grid-template-columns: 1fr;
+  }
+
+  .pm-avatar-editor-preview {
+    width: 84px;
+    height: 84px;
+    flex-basis: 84px;
+  }
+
+  .pm-avatar-preset-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

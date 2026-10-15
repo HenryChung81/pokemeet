@@ -25,4 +25,14 @@ export interface User {
 
   // 自己紹介
   introduction: string | null;
+
+  // プロフィール画像の種類（プリセットまたはアップロード画像）
+  // APIの旧レスポンスとの互換性のため任意項目にする
+  avatar_type?: string | null;
+
+  // 選択中のプリセットアイコン
+  avatar_preset?: string | null;
+
+  // アップロード画像のURL
+  avatar_url?: string | null;
 }

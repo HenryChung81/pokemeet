@@ -1,6 +1,5 @@
-
  // Reactの状態管理・初回処理に使用する機能
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 
 // React Routerからページ移動に使う機能を読み込む
 import { useNavigate } from "react-router-dom";
@@ -24,6 +23,15 @@ interface UserProfile {
 
   // 自己紹介
   introduction: string | null;
+
+  // プロフィール画像の種類（プリセットまたはアップロード画像）
+  avatar_type?: string | null;
+
+  // 選択中のプリセットアイコン
+  avatar_preset?: string | null;
+
+  // アップロード画像のURL
+  avatar_url?: string | null;
 }
 
 
@@ -43,6 +51,49 @@ interface VisibilityResponse {
   message?: string;
   detail?: string;
   is_profile_public?: boolean;
+}
+
+
+// プロフィール画像アップロードAPIのレスポンス
+interface AvatarUploadResponse {
+  message?: string;
+  detail?: string;
+  avatar_type?: string;
+  avatar_url?: string;
+}
+
+
+// プロフィール画像のプリセット一覧
+const AVATAR_PRESETS = [
+  { value: "pokeball", label: "モンスターボール", emoji: "⚪" },
+  { value: "pikachu", label: "ピカチュウ", emoji: "⚡" },
+  { value: "eevee", label: "イーブイ", emoji: "🟤" },
+  { value: "charizard", label: "リザードン", emoji: "🔥" },
+  { value: "blastoise", label: "カメックス", emoji: "💧" },
+] as const;
+
+
+// FastAPIのベースURL
+const API_BASE_URL = "http://127.0.0.1:8000";
+
+
+// プリセット名から画面表示用の絵文字を取得する
+function getAvatarPresetEmoji(preset: string | null | undefined): string {
+  return AVATAR_PRESETS.find((item) => item.value === preset)?.emoji ?? "⚪";
+}
+
+
+// 画像URLが相対パスの場合はFastAPIのURLを付ける
+function getAvatarImageUrl(url: string | null | undefined): string {
+  if (!url) {
+    return "";
+  }
+
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  return `${API_BASE_URL}${url}`;
 }
 
 
@@ -99,6 +150,27 @@ function ProfilePage() {
     useState(false);
 
 
+  // アップロードする画像ファイル
+  const [selectedAvatarFile, setSelectedAvatarFile] =
+    useState<File | null>(null);
+
+  // 選択した画像のプレビューURL
+  const [avatarPreviewUrl, setAvatarPreviewUrl] =
+    useState("");
+
+  // 画像アップロード中かどうか
+  const [isUploadingAvatar, setIsUploadingAvatar] =
+    useState(false);
+
+  // プリセットアイコンの保存中かどうか
+  const [isSavingAvatarPreset, setIsSavingAvatarPreset] =
+    useState(false);
+
+  // 選択中のプリセットアイコン
+  const [selectedAvatarPreset, setSelectedAvatarPreset] =
+    useState("pokeball");
+
+
   // ページ移動に使用する
   const navigate = useNavigate();
 
@@ -124,7 +196,7 @@ function ProfilePage() {
 
       // FastAPIのプロフィール取得APIへアクセス
       const response = await fetch(
-        "http://127.0.0.1:8000/me",
+        `${API_BASE_URL}/me`,
         {
           method: "GET",
 
@@ -154,6 +226,9 @@ function ProfilePage() {
       // プロフィール情報を保存
       setUser(data);
 
+      // 現在のプリセットアイコンを選択状態にする
+      setSelectedAvatarPreset(data.avatar_preset || "pokeball");
+
 
       // 編集フォームにも現在の値を設定
       setNickname(data.nickname || "");
@@ -173,7 +248,7 @@ function ProfilePage() {
 
       // プロフィール公開設定を取得する
       const visibilityResponse = await fetch(
-        "http://127.0.0.1:8000/me/profile-visibility",
+        `${API_BASE_URL}/me/profile-visibility`,
         {
           method: "GET",
 
@@ -224,6 +299,203 @@ function ProfilePage() {
   }, []);
 
 
+  // プレビュー用に作成した一時URLを解放する
+  //
+  // ファイルを選び直したときやページを離れたときに、
+  // 不要になったObject URLを解放する。
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewUrl) {
+        URL.revokeObjectURL(avatarPreviewUrl);
+      }
+    };
+  }, [avatarPreviewUrl]);
+
+
+  // 選択した画像ファイルを確認し、プレビューを表示する
+  const handleAvatarFileChange = (
+    event: ChangeEvent<HTMLInputElement>
+  ): void => {
+
+    const file = event.target.files?.[0] ?? null;
+
+    // ファイル選択がキャンセルされた場合
+    if (!file) {
+      setSelectedAvatarFile(null);
+      setAvatarPreviewUrl("");
+      return;
+    }
+
+    // バックエンドと同じ5MB制限を事前に確認する
+    if (file.size > 5 * 1024 * 1024) {
+      setSelectedAvatarFile(null);
+      setAvatarPreviewUrl("");
+      setMessage("画像サイズは5MB以下にしてください");
+      event.target.value = "";
+      return;
+    }
+
+    // 対応している画像形式だけを受け付ける
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      setSelectedAvatarFile(null);
+      setAvatarPreviewUrl("");
+      setMessage("JPEG・PNG・WebP形式の画像を選択してください");
+      event.target.value = "";
+      return;
+    }
+
+    // 選択したファイルを保存し、プレビュー用URLを作る
+    setSelectedAvatarFile(file);
+    setAvatarPreviewUrl(URL.createObjectURL(file));
+    setMessage("");
+
+    // 同じファイルを再度選択した場合もchangeイベントが発生するようにする
+    event.target.value = "";
+  };
+
+
+  // 選択した画像をプロフィール画像としてアップロードする
+  const handleAvatarUpload = async (): Promise<void> => {
+
+    // JWTを取得
+    const token = localStorage.getItem("access_token");
+
+    // JWTがない場合
+    if (!token) {
+      setMessage("ログインしてください");
+      return;
+    }
+
+    // 画像が選択されていない場合
+    if (!selectedAvatarFile) {
+      setMessage("アップロードする画像を選択してください");
+      return;
+    }
+
+    try {
+      setIsUploadingAvatar(true);
+      setMessage("");
+
+      // ファイルアップロードではFormDataを使用する
+      const formData = new FormData();
+      formData.append("file", selectedAvatarFile);
+
+      // Content-Typeは手動設定しない。
+      // ブラウザがmultipart/form-dataの境界情報を設定する。
+      const response = await fetch(
+        `${API_BASE_URL}/me/avatar`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      const data: AvatarUploadResponse = await response.json();
+
+      if (!response.ok) {
+        setMessage(
+          data.detail ||
+          "プロフィール画像のアップロードに失敗しました"
+        );
+        return;
+      }
+
+      // アップロード成功後、選択中のファイルをクリアする
+      setSelectedAvatarFile(null);
+      setAvatarPreviewUrl("");
+
+      setMessage(
+        data.message ||
+        "プロフィール画像をアップロードしました"
+      );
+
+      // 最新のプロフィール情報を取得する
+      await getMyProfile();
+
+    } catch (error) {
+      console.error(error);
+      setMessage("通信エラーが発生しました");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+
+  // 選択したプリセットアイコンをプロフィールに設定する
+  const handleAvatarPresetUpdate = async (
+    preset: string
+  ): Promise<void> => {
+
+    // JWTを取得
+    const token = localStorage.getItem("access_token");
+
+    if (!token) {
+      setMessage("ログインしてください");
+      return;
+    }
+
+    if (!user) {
+      setMessage("プロフィール情報を取得してください");
+      return;
+    }
+
+    try {
+      setIsSavingAvatarPreset(true);
+      setMessage("");
+
+      // UserUpdateではnicknameが必須なので、現在の値も送信する。
+      // ほかのプロフィール項目は送信せず、アイコンだけを更新する。
+      const response = await fetch(
+        `${API_BASE_URL}/me`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            nickname: user.nickname,
+            avatar_preset: preset,
+          }),
+        }
+      );
+
+      const data: UpdateResponse = await response.json();
+
+      if (!response.ok) {
+        setMessage(
+          data.detail ||
+          "プロフィールアイコンの変更に失敗しました"
+        );
+        return;
+      }
+
+      setMessage(
+        data.message ||
+        "プロフィールアイコンを変更しました"
+      );
+
+      // 最新のプロフィール情報を取得する
+      await getMyProfile();
+
+    } catch (error) {
+      console.error(error);
+      setMessage("通信エラーが発生しました");
+    } finally {
+      setIsSavingAvatarPreset(false);
+    }
+  };
+
+
   // プロフィール更新処理
   const handleUpdate = async (): Promise<void> => {
 
@@ -252,7 +524,7 @@ function ProfilePage() {
 
       // FastAPIのプロフィール更新APIへアクセス
       const response = await fetch(
-        "http://127.0.0.1:8000/me",
+        `${API_BASE_URL}/me`,
         {
           // 更新なのでPUT
           method: "PUT",
@@ -360,7 +632,7 @@ function ProfilePage() {
 
       // FastAPIの公開設定更新APIへアクセス
       const response = await fetch(
-        "http://127.0.0.1:8000/me/profile-visibility",
+        `${API_BASE_URL}/me/profile-visibility`,
         {
           method: "PUT",
 
@@ -483,8 +755,18 @@ function ProfilePage() {
 
             <section className="pm-card pm-profile-hero">
 
-              <div className="pm-avatar" aria-hidden="true">
-                ⚡
+              <div className="pm-avatar">
+                {user.avatar_type === "upload" && user.avatar_url ? (
+                  <img
+                    className="pm-avatar-image"
+                    src={getAvatarImageUrl(user.avatar_url)}
+                    alt={`${user.nickname}のプロフィール画像`}
+                  />
+                ) : (
+                  <span aria-hidden="true">
+                    {getAvatarPresetEmoji(user.avatar_preset)}
+                  </span>
+                )}
               </div>
 
               <div className="pm-profile-hero-text">
@@ -529,6 +811,104 @@ function ProfilePage() {
               </div>
 
               <div className="pm-profile-form">
+
+                {/* プロフィール画像 */}
+                <section className="pm-avatar-editor">
+                  <div className="pm-section-heading">
+                    <h3>プロフィール画像</h3>
+                    <p className="pm-muted">
+                      画像をアップロードするか、プリセットアイコンを選択できます。
+                    </p>
+                  </div>
+
+                  <div className="pm-avatar-editor-main">
+                    <div className="pm-avatar pm-avatar-editor-preview">
+                      {avatarPreviewUrl ? (
+                        <img
+                          className="pm-avatar-image"
+                          src={avatarPreviewUrl}
+                          alt="選択した画像のプレビュー"
+                        />
+                      ) : user.avatar_type === "upload" && user.avatar_url ? (
+                        <img
+                          className="pm-avatar-image"
+                          src={getAvatarImageUrl(user.avatar_url)}
+                          alt={`${user.nickname}のプロフィール画像`}
+                        />
+                      ) : (
+                        <span aria-hidden="true">
+                          {getAvatarPresetEmoji(selectedAvatarPreset)}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="pm-avatar-editor-controls">
+                      <label className="pm-form-field">
+                        画像ファイル（JPEG・PNG・WebP、5MB以下）
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={handleAvatarFileChange}
+                        />
+                      </label>
+
+                      <div className="pm-actions">
+                        <button
+                          className="pm-button pm-button-primary"
+                          type="button"
+                          onClick={() => void handleAvatarUpload()}
+                          disabled={!selectedAvatarFile || isUploadingAvatar}
+                        >
+                          {isUploadingAvatar
+                            ? "アップロード中..."
+                            : "画像をアップロード"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pm-avatar-presets">
+                    <p className="pm-info-label">プリセットアイコン</p>
+
+                    <div className="pm-avatar-preset-list">
+                      {AVATAR_PRESETS.map((preset) => (
+                        <button
+                          key={preset.value}
+                          className={`pm-avatar-preset ${
+                            selectedAvatarPreset === preset.value
+                              ? "is-selected"
+                              : ""
+                          }`}
+                          type="button"
+                          aria-pressed={selectedAvatarPreset === preset.value}
+                          onClick={() => setSelectedAvatarPreset(preset.value)}
+                          disabled={isSavingAvatarPreset}
+                        >
+                          <span
+                            className="pm-avatar-preset-emoji"
+                            aria-hidden="true"
+                          >
+                            {preset.emoji}
+                          </span>
+                          <span>{preset.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      className="pm-button pm-button-secondary"
+                      type="button"
+                      onClick={() =>
+                        void handleAvatarPresetUpdate(selectedAvatarPreset)
+                      }
+                      disabled={isSavingAvatarPreset || isUploadingAvatar}
+                    >
+                      {isSavingAvatarPreset
+                        ? "保存中..."
+                        : "選択したアイコンを設定"}
+                    </button>
+                  </div>
+                </section>
 
                 {/* ニックネーム */}
                 <label className="pm-form-field">

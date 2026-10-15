@@ -23,6 +23,130 @@ class ProfileVisibilityUpdate(BaseModel):
     is_profile_public: bool
 
 
+# ユーザーのプロフィール情報を組み立てる共通処理
+#
+# ユーザー一覧APIとユーザー詳細APIで共通して使用する。
+# 既存のプロフィール項目に加え、好きなポケモン一覧、
+# ゲーム、プレイスタイル、アイコン情報を取得する。
+def _build_user_response(
+    connection,
+    user,
+    current_user_id: int,
+):
+    # 本人かどうかを確認する。
+    # 性別とフレンドコードの個別公開設定は、本人以外には適用する。
+    is_self = user.id == current_user_id
+
+    # 好きなポケモンの一覧を取得する
+    favorite_result = connection.execute(
+        text("""
+            SELECT pokemon_name
+            FROM user_favorite_pokemon
+            WHERE user_id = :user_id
+            ORDER BY display_order ASC, pokemon_name ASC
+        """),
+        {"user_id": user.id},
+    )
+
+    favorite_pokemon_list = [
+        row.pokemon_name
+        for row in favorite_result.fetchall()
+    ]
+
+    # 移行前のデータや一覧テーブルに登録されていない
+    # 既存ユーザーにも対応するため、従来の項目を予備として使う。
+    if (
+        not favorite_pokemon_list
+        and user.favorite_pokemon
+        and user.favorite_pokemon.strip()
+    ):
+        favorite_pokemon_list = [
+            user.favorite_pokemon.strip()
+        ]
+
+    # よく遊ぶポケモンのゲームをslugで取得する
+    game_result = connection.execute(
+        text("""
+            SELECT pg.slug
+            FROM user_games AS ug
+            JOIN pokemon_games AS pg
+                ON pg.id = ug.game_id
+            WHERE ug.user_id = :user_id
+            ORDER BY pg.id ASC
+        """),
+        {"user_id": user.id},
+    )
+
+    game_slugs = [
+        row.slug
+        for row in game_result.fetchall()
+    ]
+
+    # プレイスタイルをslugで取得する
+    play_style_result = connection.execute(
+        text("""
+            SELECT ps.slug
+            FROM user_play_styles AS ups
+            JOIN play_styles AS ps
+                ON ps.id = ups.play_style_id
+            WHERE ups.user_id = :user_id
+            ORDER BY ps.id ASC
+        """),
+        {"user_id": user.id},
+    )
+
+    play_style_slugs = [
+        row.slug
+        for row in play_style_result.fetchall()
+    ]
+
+    # アイコンの種類と保存値を取得する
+    avatar_type = user.avatar_type or "preset"
+    avatar_value = user.avatar_value
+
+    # プリセットアイコンの場合はプリセット名を返す。
+    # アップロード画像の場合は保存値を画像URLとして返す。
+    avatar_preset = (
+        avatar_value
+        if avatar_type == "preset"
+        else None
+    )
+
+    avatar_url = (
+        avatar_value
+        if avatar_type in ("upload", "uploaded")
+        else None
+    )
+
+    # ユーザー情報を返す
+    #
+    # login_id、password_hash、個別の公開設定そのものは返さない。
+    # 非公開の性別・フレンドコードはNoneにして値を隠す。
+    return {
+        "id": user.id,
+        "nickname": user.nickname,
+        "favorite_pokemon": user.favorite_pokemon,
+        "favorite_pokemon_list": favorite_pokemon_list,
+        "language": user.language,
+        "introduction": user.introduction,
+        "gender": (
+            user.gender
+            if is_self or bool(user.is_gender_public)
+            else None
+        ),
+        "friend_code": (
+            user.friend_code
+            if is_self or bool(user.is_friend_code_public)
+            else None
+        ),
+        "avatar_type": avatar_type,
+        "avatar_preset": avatar_preset,
+        "avatar_url": avatar_url,
+        "game_slugs": game_slugs,
+        "play_style_slugs": play_style_slugs,
+    }
+
+
 # ユーザー一覧取得API
 @router.get("/users")
 def get_users(
@@ -62,7 +186,13 @@ def get_users(
                     nickname,
                     favorite_pokemon,
                     language,
-                    introduction
+                    introduction,
+                    gender,
+                    is_gender_public,
+                    friend_code,
+                    is_friend_code_public,
+                    avatar_type,
+                    avatar_value
                 FROM users
                 WHERE
                     (:is_admin = 1)
@@ -76,18 +206,22 @@ def get_users(
             },
         )
 
+        # 後続の追加クエリを実行する前に、一覧結果を取得しておく
+        user_rows = result.fetchall()
+
         users = []
 
         # DBの結果を1行ずつ処理する
-        for row in result:
+        for row in user_rows:
 
-            users.append({
-                "id": row.id,
-                "nickname": row.nickname,
-                "favorite_pokemon": row.favorite_pokemon,
-                "language": row.language,
-                "introduction": row.introduction,
-            })
+            # 共通処理で新しいプロフィール項目も組み立てる
+            users.append(
+                _build_user_response(
+                    connection,
+                    row,
+                    current_user_id,
+                )
+            )
 
         return users
 
@@ -132,7 +266,13 @@ def get_user(
                     favorite_pokemon,
                     language,
                     introduction,
-                    is_profile_public
+                    is_profile_public,
+                    gender,
+                    is_gender_public,
+                    friend_code,
+                    is_friend_code_public,
+                    avatar_type,
+                    avatar_value
                 FROM users
                 WHERE id = :user_id
             """),
@@ -161,17 +301,13 @@ def get_user(
                 detail="ユーザーが見つかりません",
             )
 
-        # ユーザー情報を返す
-        #
-        # login_idやpassword_hash、
-        # 公開設定の内部情報は返さない。
-        return {
-            "id": user.id,
-            "nickname": user.nickname,
-            "favorite_pokemon": user.favorite_pokemon,
-            "language": user.language,
-            "introduction": user.introduction,
-        }
+        # 共通処理でプロフィール情報を組み立てる
+        # 性別・フレンドコードは、それぞれの公開設定にも従う
+        return _build_user_response(
+            connection,
+            user,
+            current_user_id,
+        )
 
 
 # 自分のプロフィール公開設定を取得するAPI
@@ -270,7 +406,7 @@ def create_user(user: UserCreate):
             #
             # login_idとnicknameを別々に保存する。
             # is_profile_publicはDBのデフォルト値（公開）を使用する。
-            connection.execute(
+            insert_result = connection.execute(
                 text("""
                     INSERT INTO users (
                         login_id,
@@ -310,6 +446,38 @@ def create_user(user: UserCreate):
                     "introduction": user.introduction,
                 },
             )
+
+            # 新しく登録したユーザーのIDを取得する
+            new_user_id = insert_result.lastrowid
+
+            # 好きなポケモンが入力されている場合は、
+            # 新しい一覧テーブルにも登録する。
+            #
+            # 従来のfavorite_pokemon列も引き続き保存するため、
+            # 既存機能との互換性を維持できる。
+            if (
+                user.favorite_pokemon
+                and user.favorite_pokemon.strip()
+            ):
+                connection.execute(
+                    text("""
+                        INSERT INTO user_favorite_pokemon (
+                            user_id,
+                            pokemon_name,
+                            display_order
+                        )
+                        VALUES (
+                            :user_id,
+                            :pokemon_name,
+                            0
+                        )
+                    """),
+                    {
+                        "user_id": new_user_id,
+                        "pokemon_name":
+                            user.favorite_pokemon.strip(),
+                    },
+                )
 
             # INSERTを確定する
             connection.commit()

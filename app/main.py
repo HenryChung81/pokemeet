@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from app.routers import users
 from app.routers import auth
 from app.routers import events
+from app.routers import avatars
 
 
 # FastAPIアプリ本体
@@ -15,6 +16,13 @@ app = FastAPI()
 
 # 交流会画像保存用フォルダを作成する
 Path("uploads/events").mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+
+# プロフィール画像保存用フォルダを作成する
+Path("uploads/avatars").mkdir(
     parents=True,
     exist_ok=True
 )
@@ -58,6 +66,10 @@ app.include_router(auth.router)
 
 # 交流会関係APIを登録
 app.include_router(events.router)
+
+
+# プロフィール画像関係APIを登録
+app.include_router(avatars.router)
 
 
 # トップページ
