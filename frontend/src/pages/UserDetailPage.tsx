@@ -1,3 +1,4 @@
+
 // Reactの状態管理と、
 // ページ表示時に処理を実行するための機能
 import { useEffect, useState } from "react";
@@ -11,6 +12,7 @@ import {
 
 // 共通のUser型を読み込む
 import type { User } from "../types/user";
+import "./ProfilePages.css";
 
 
 // ユーザー詳細画面
@@ -40,6 +42,9 @@ function UserDetailPage() {
   // エラーメッセージなどを保存するstate
   const [message, setMessage] = useState("");
 
+  // 読み込み中かどうか
+  const [isLoading, setIsLoading] = useState(true);
+
 
   // React Routerを使って
   // 別のページへ移動するための関数
@@ -59,6 +64,17 @@ function UserDetailPage() {
           "ユーザーIDが指定されていません"
         );
 
+        setIsLoading(false);
+        return;
+      }
+
+
+      // ログイン時に保存したJWTを取得する
+      const token = localStorage.getItem("access_token");
+
+      if (!token) {
+        setMessage("ログインしてください");
+        setIsLoading(false);
         return;
       }
 
@@ -71,7 +87,12 @@ function UserDetailPage() {
         // GET /users/5
         // になる。
         const response = await fetch(
-          `http://127.0.0.1:8000/users/${userId}`
+          `http://127.0.0.1:8000/users/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
 
 
@@ -114,82 +135,150 @@ function UserDetailPage() {
         setMessage(
           "通信エラーが発生しました"
         );
+
+      } finally {
+
+        setIsLoading(false);
       }
     };
 
 
     // ユーザー情報を取得する
-    getUser();
+    void getUser();
 
   }, [userId]);
 
 
   // 画面に表示する内容
   return (
-    <div>
-
-      {/* アプリのタイトル */}
-      <h1>PokeMeet</h1>
-
+    <main className="pm-profile-page">
 
       {/* ページのタイトル */}
-      <h2>ユーザー詳細</h2>
+      <header className="pm-page-heading">
+        <p className="pm-eyebrow">POKEMEET / TRAINER CARD</p>
+        <h1>トレーナープロフィール</h1>
+        <p>ポケモン好きなトレーナーのプロフィールです。</p>
+      </header>
+
+
+      {/* 読み込み中の表示 */}
+      {isLoading && (
+        <div className="pm-card">
+          プロフィールを読み込み中...
+        </div>
+      )}
 
 
       {/* エラーメッセージがある場合だけ表示 */}
-      {message && (
-        <p>{message}</p>
+      {!isLoading && message && (
+        <p className="pm-message" role="status">
+          {message}
+        </p>
       )}
 
 
       {/* ユーザー情報が取得できた場合だけ表示 */}
       {user && (
-        <div>
+        <>
 
-          {/* ニックネーム */}
-          <h3>
-            {user.nickname}
-          </h3>
+          {/* ニックネームとユーザーID */}
+          <section className="pm-card pm-profile-hero">
 
+            <div className="pm-avatar" aria-hidden="true">
+              ⚡
+            </div>
 
-          {/* ユーザーID */}
-          <p>
-            ID：{user.id}
-          </p>
+            <div className="pm-profile-hero-text">
+              <p className="pm-eyebrow">POKEMEET TRAINER</p>
 
+              <h2>
+                {user.nickname}
+              </h2>
 
-          {/* 好きなポケモン */}
-          <p>
-            好きなポケモン：
-            {user.favorite_pokemon}
-          </p>
+              <p className="pm-muted">
+                トレーナー ID：{user.id}
+              </p>
+            </div>
 
-
-          {/* 使用言語 */}
-          <p>
-            言語：
-            {user.language}
-          </p>
+          </section>
 
 
-          {/* 自己紹介 */}
-          <p>
-            自己紹介：
-            {user.introduction}
-          </p>
+          {/* 好きなポケモン・言語・自己紹介 */}
+          <section className="pm-profile-info-grid">
 
-        </div>
+            {/* 好きなポケモン */}
+            <article className="pm-card pm-info-card">
+
+              <span className="pm-info-icon" aria-hidden="true">
+                🎮
+              </span>
+
+              <p className="pm-info-label">
+                好きなポケモン
+              </p>
+
+              <h3>
+                {user.favorite_pokemon || "未設定"}
+              </h3>
+
+            </article>
+
+
+            {/* 使用言語 */}
+            <article className="pm-card pm-info-card">
+
+              <span className="pm-info-icon" aria-hidden="true">
+                🌐
+              </span>
+
+              <p className="pm-info-label">
+                使用言語
+              </p>
+
+              <h3>
+                {user.language || "未設定"}
+              </h3>
+
+            </article>
+
+
+            {/* 自己紹介 */}
+            <article className="pm-card pm-info-card pm-introduction-card">
+
+              <span className="pm-info-icon" aria-hidden="true">
+                💬
+              </span>
+
+              <p className="pm-info-label">
+                自己紹介
+              </p>
+
+              <p className="pm-introduction">
+                {user.introduction || "自己紹介はまだ設定されていません。"}
+              </p>
+
+            </article>
+
+          </section>
+
+        </>
       )}
 
 
       {/* ユーザー一覧に戻るボタン */}
-      <button
-        onClick={() => navigate("/users")}
-      >
-        ユーザー一覧に戻る
-      </button>
+      <div className="pm-page-footer">
 
-    </div>
+        <button
+          className="pm-button pm-button-secondary"
+          type="button"
+          onClick={() => navigate("/users")}
+        >
+          ← ユーザー一覧に戻る
+        </button>
+
+      </div>
+
+    </main>
   );
 }
 

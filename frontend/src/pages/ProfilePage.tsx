@@ -1,8 +1,10 @@
-// Reactの状態管理・初回処理に使用する機能
+
+ // Reactの状態管理・初回処理に使用する機能
 import { useEffect, useState } from "react";
 
 // React Routerからページ移動に使う機能を読み込む
 import { useNavigate } from "react-router-dom";
+import "./ProfilePages.css";
 
 
 // プロフィール情報の型
@@ -33,6 +35,14 @@ interface UpdateResponse {
 
   // エラー時のメッセージ
   detail?: string;
+}
+
+
+// プロフィール公開設定APIのレスポンス
+interface VisibilityResponse {
+  message?: string;
+  detail?: string;
+  is_profile_public?: boolean;
 }
 
 
@@ -76,6 +86,16 @@ function ProfilePage() {
 
   // 保存中かどうか
   const [isSaving, setIsSaving] =
+    useState(false);
+
+
+  // プロフィールを公開するかどうか
+  const [isProfilePublic, setIsProfilePublic] =
+    useState(true);
+
+
+  // 公開設定の保存中かどうか
+  const [isSavingVisibility, setIsSavingVisibility] =
     useState(false);
 
 
@@ -150,6 +170,40 @@ function ProfilePage() {
         data.introduction || ""
       );
 
+
+      // プロフィール公開設定を取得する
+      const visibilityResponse = await fetch(
+        "http://127.0.0.1:8000/me/profile-visibility",
+        {
+          method: "GET",
+
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+
+      // 公開設定APIから返されたJSON
+      const visibilityData: VisibilityResponse =
+        await visibilityResponse.json();
+
+
+      // 公開設定の取得に成功した場合
+      if (visibilityResponse.ok) {
+
+        setIsProfilePublic(
+          visibilityData.is_profile_public ?? true
+        );
+
+      } else {
+
+        setMessage(
+          visibilityData.detail ||
+          "公開設定の取得に失敗しました"
+        );
+      }
+
     } catch (error) {
 
       // 通信エラー
@@ -165,7 +219,7 @@ function ProfilePage() {
   // ページを開いたときにプロフィールを取得
   useEffect(() => {
 
-    getMyProfile();
+    void getMyProfile();
 
   }, []);
 
@@ -278,6 +332,96 @@ function ProfilePage() {
   };
 
 
+  // プロフィール公開設定の更新処理
+  const handleVisibilityUpdate = async (): Promise<void> => {
+
+    // JWTを取得
+    const token =
+      localStorage.getItem("access_token");
+
+
+    // JWTがない場合
+    if (!token) {
+
+      setMessage("ログインしてください");
+
+      return;
+    }
+
+
+    try {
+
+      // 保存中にする
+      setIsSavingVisibility(true);
+
+      // メッセージをクリア
+      setMessage("");
+
+
+      // FastAPIの公開設定更新APIへアクセス
+      const response = await fetch(
+        "http://127.0.0.1:8000/me/profile-visibility",
+        {
+          method: "PUT",
+
+          headers: {
+            "Content-Type": "application/json",
+
+            Authorization: `Bearer ${token}`,
+          },
+
+          // 更新する公開設定
+          body: JSON.stringify({
+            is_profile_public: isProfilePublic,
+          }),
+        }
+      );
+
+
+      // FastAPIから返されたJSON
+      const data: VisibilityResponse =
+        await response.json();
+
+
+      // 更新失敗
+      if (!response.ok) {
+
+        setMessage(
+          data.detail ||
+          "公開設定の更新に失敗しました"
+        );
+
+        return;
+      }
+
+
+      // 更新成功
+      setIsProfilePublic(
+        data.is_profile_public ?? isProfilePublic
+      );
+
+      setMessage(
+        data.message ||
+        "公開設定を更新しました"
+      );
+
+    } catch (error) {
+
+      // 通信エラー
+      console.error(error);
+
+      setMessage(
+        "通信エラーが発生しました"
+      );
+
+    } finally {
+
+      // 保存中を解除
+      setIsSavingVisibility(false);
+    }
+  };
+
+
   // 編集をキャンセルする処理
   const handleCancel = (): void => {
 
@@ -311,62 +455,56 @@ function ProfilePage() {
 
 
   return (
-    <div>
+    <main className="pm-profile-page">
 
-      {/* アプリのタイトル */}
-      <h1>PokeMeet</h1>
-
-
-      {/* ページタイトル */}
-      <h2>マイプロフィール</h2>
+      {/* アプリのタイトルとページタイトル */}
+      <header className="pm-page-heading">
+        <p className="pm-eyebrow">POKEMEET / MY PROFILE</p>
+        <h1>マイプロフィール</h1>
+        <p>プロフィール情報と公開範囲を設定できます。</p>
+      </header>
 
 
       {/* メッセージ */}
       {message && (
-        <p>{message}</p>
+        <p className="pm-message" role="status">
+          {message}
+        </p>
       )}
 
 
       {/* プロフィールが取得できた場合 */}
       {user && (
 
-        <div>
+        <>
 
           {/* 表示モード */}
           {!isEditing && (
 
-            <div>
+            <section className="pm-card pm-profile-hero">
 
-              <h3>
-                {user.nickname}
-              </h3>
+              <div className="pm-avatar" aria-hidden="true">
+                ⚡
+              </div>
 
+              <div className="pm-profile-hero-text">
 
-              <p>
-                ID：{user.id}
-              </p>
+                <p className="pm-eyebrow">POKEMEET TRAINER</p>
 
+                <h2>
+                  {user.nickname}
+                </h2>
 
-              <p>
-                好きなポケモン：
-                {user.favorite_pokemon || "未設定"}
-              </p>
+                <p className="pm-muted">
+                  トレーナー ID：{user.id}
+                </p>
 
-
-              <p>
-                言語：
-                {user.language || "未設定"}
-              </p>
-
-
-              <p>
-                自己紹介：
-                {user.introduction || "未設定"}
-              </p>
-
+              </div>
 
               {/* 編集ボタン */}
               <button
+                className="pm-button pm-button-primary"
+                type="button"
                 onClick={() =>
                   setIsEditing(true)
                 }
@@ -374,158 +512,198 @@ function ProfilePage() {
                 プロフィールを編集
               </button>
 
-            </div>
+            </section>
           )}
 
 
           {/* 編集モード */}
           {isEditing && (
 
-            <div>
+            <section className="pm-card">
 
-              <h3>
-                プロフィール編集
-              </h3>
+              <div className="pm-section-heading">
+                <h2>プロフィール編集</h2>
+                <p className="pm-muted">
+                  他のユーザーに表示する情報を編集できます。
+                </p>
+              </div>
 
+              <div className="pm-profile-form">
 
-              {/* ニックネーム */}
-              <div>
-
-                <label>
+                {/* ニックネーム */}
+                <label className="pm-form-field">
                   ニックネーム
+
+                  <input
+                    type="text"
+                    value={nickname}
+                    onChange={(event) =>
+                      setNickname(
+                        event.target.value
+                      )
+                    }
+                  />
                 </label>
 
-                <br />
 
-                <input
-                  type="text"
-                  value={nickname}
-                  onChange={(event) =>
-                    setNickname(
-                      event.target.value
-                    )
-                  }
-                />
-
-              </div>
-
-
-              <br />
-
-
-              {/* 好きなポケモン */}
-              <div>
-
-                <label>
+                {/* 好きなポケモン */}
+                <label className="pm-form-field">
                   好きなポケモン
+
+                  <input
+                    type="text"
+                    value={favoritePokemon}
+                    onChange={(event) =>
+                      setFavoritePokemon(
+                        event.target.value
+                      )
+                    }
+                  />
                 </label>
 
-                <br />
 
-                <input
-                  type="text"
-                  value={favoritePokemon}
-                  onChange={(event) =>
-                    setFavoritePokemon(
-                      event.target.value
-                    )
-                  }
-                />
-
-              </div>
-
-
-              <br />
-
-
-              {/* 言語 */}
-              <div>
-
-                <label>
+                {/* 言語 */}
+                <label className="pm-form-field">
                   言語
+
+                  <input
+                    type="text"
+                    value={language}
+                    onChange={(event) =>
+                      setLanguage(
+                        event.target.value
+                      )
+                    }
+                  />
                 </label>
 
-                <br />
 
-                <input
-                  type="text"
-                  value={language}
-                  onChange={(event) =>
-                    setLanguage(
-                      event.target.value
-                    )
-                  }
-                />
-
-              </div>
-
-
-              <br />
-
-
-              {/* 自己紹介 */}
-              <div>
-
-                <label>
+                {/* 自己紹介 */}
+                <label className="pm-form-field">
                   自己紹介
+
+                  <textarea
+                    rows={5}
+                    value={introduction}
+                    onChange={(event) =>
+                      setIntroduction(
+                        event.target.value
+                      )
+                    }
+                  />
                 </label>
 
-                <br />
 
-                <textarea
-                  value={introduction}
-                  onChange={(event) =>
-                    setIntroduction(
-                      event.target.value
-                    )
-                  }
-                />
+                {/* 保存・キャンセルボタン */}
+                <div className="pm-actions">
+
+                  <button
+                    className="pm-button pm-button-primary"
+                    type="button"
+                    onClick={() => void handleUpdate()}
+                    disabled={isSaving}
+                  >
+                    {isSaving
+                      ? "保存中..."
+                      : "プロフィールを保存する"}
+                  </button>
+
+
+                  <button
+                    className="pm-button pm-button-secondary"
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={isSaving}
+                  >
+                    キャンセル
+                  </button>
+
+                </div>
 
               </div>
 
-
-              <br />
-
-
-              {/* 保存ボタン */}
-              <button
-                onClick={handleUpdate}
-                disabled={isSaving}
-              >
-                {isSaving
-                  ? "保存中..."
-                  : "保存する"}
-              </button>
-
-
-              {/* キャンセルボタン */}
-              <button
-                onClick={handleCancel}
-                disabled={isSaving}
-              >
-                キャンセル
-              </button>
-
-            </div>
+            </section>
           )}
 
-        </div>
+
+          {/* プロフィールの公開設定 */}
+          <section className="pm-card pm-visibility-card">
+
+            <div className="pm-section-heading">
+              <h2>公開設定</h2>
+              <p className="pm-muted">
+                ユーザー一覧やプロフィール詳細での表示範囲を設定します。
+              </p>
+            </div>
+
+
+            {/* 公開・非公開を選択する */}
+            <label className="pm-visibility-option">
+
+              <input
+                type="checkbox"
+                checked={isProfilePublic}
+                onChange={(event) =>
+                  setIsProfilePublic(
+                    event.target.checked
+                  )
+                }
+              />
+
+              <span className="pm-visibility-copy">
+
+                <strong>
+                  プロフィールを公開する
+                </strong>
+
+                <span>
+                  オンにすると、他の一般ユーザーの一覧に表示され、
+                  プロフィール詳細も閲覧できるようになります。
+                </span>
+
+                <span>
+                  オフにすると、管理者と自分以外には表示されません。
+                </span>
+
+              </span>
+
+            </label>
+
+
+            {/* 公開設定の保存ボタン */}
+            <button
+              className="pm-button pm-button-primary"
+              type="button"
+              onClick={() => void handleVisibilityUpdate()}
+              disabled={isSavingVisibility}
+            >
+              {isSavingVisibility
+                ? "保存中..."
+                : "公開設定を保存する"}
+            </button>
+
+          </section>
+
+        </>
       )}
 
 
-      <br />
-
-
       {/* ユーザー一覧へ戻る */}
-      <button
-        onClick={() =>
-          navigate("/users")
-        }
-      >
-        ユーザー一覧に戻る
-      </button>
+      <div className="pm-page-footer">
 
-    </div>
+        <button
+          className="pm-button pm-button-secondary"
+          type="button"
+          onClick={() =>
+            navigate("/users")
+          }
+        >
+          ← ユーザー一覧に戻る
+        </button>
+
+      </div>
+
+    </main>
   );
 }
 
