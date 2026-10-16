@@ -1,4 +1,15 @@
+
+# Python
 .venv/
 __pycache__/
+*.py[cod]
+
+# Environment variables
 .env
-.DS_Store
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs
+logs/
+*.log

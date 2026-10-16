@@ -1,5 +1,5 @@
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 
 // FastAPIのログインAPIが返すデータの型
@@ -8,6 +8,41 @@ interface LoginResponse {
   token_type?: string;
   message?: string;
   detail?: string;
+}
+
+// Google Identity Servicesから返される認証結果
+interface GoogleCredentialResponse {
+  credential?: string;
+}
+
+// Google Identity Servicesの必要な型
+interface GoogleIdentityApi {
+  initialize: (options: {
+    client_id: string;
+    callback: (response: GoogleCredentialResponse) => void;
+  }) => void;
+  renderButton: (
+    parent: HTMLElement,
+    options: {
+      theme?: "outline" | "filled_blue" | "filled_black";
+      size?: "large" | "medium" | "small";
+      type?: "standard" | "icon";
+      shape?: "rectangular" | "pill" | "circle" | "square";
+      text?: "signin_with" | "signup_with" | "continue_with" | "signin";
+      width?: number;
+      logo_alignment?: "left" | "center";
+    }
+  ) => void;
+}
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: GoogleIdentityApi;
+      };
+    };
+  }
 }
 
 // ボール型のロゴ
@@ -152,6 +187,137 @@ function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
+
+  // Google Identity Servicesのボタンを初期化する。
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const buttonContainer = document.getElementById(
+      "google-signin-button"
+    );
+
+    if (!buttonContainer) {
+      return;
+    }
+
+    if (!clientId) {
+      setMessage(
+        "Googleログインの設定がありません。VITE_GOOGLE_CLIENT_IDを確認してください。"
+      );
+      return;
+    }
+
+    const initializeGoogle = (): void => {
+      const googleId = window.google?.accounts?.id;
+      if (!googleId) {
+        setMessage(
+          "Googleログインを読み込めませんでした。ページを再読み込みしてください。"
+        );
+        return;
+      }
+
+      googleId.initialize({
+        client_id: clientId,
+        callback: async (googleResponse) => {
+          if (!googleResponse.credential) {
+            setMessage("Google認証情報を取得できませんでした。");
+            return;
+          }
+
+          setMessage("");
+          setIsLoading(true);
+
+          try {
+            const response = await fetch(
+              "http://127.0.0.1:8000/google-login",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  credential: googleResponse.credential,
+                }),
+              }
+            );
+
+            const data: LoginResponse = await response.json();
+
+            if (!response.ok) {
+              setMessage(
+                data.detail ||
+                  data.message ||
+                  "Googleログインに失敗しました。もう一度お試しください。"
+              );
+              return;
+            }
+
+            if (!data.access_token) {
+              setMessage(
+                "ログイン情報を取得できませんでした。もう一度お試しください。"
+              );
+              return;
+            }
+
+            localStorage.setItem("access_token", data.access_token);
+            navigate("/users");
+          } catch (error) {
+            console.error("Googleログインエラー:", error);
+            setMessage(
+              "サーバーとの通信に失敗しました。FastAPIが起動しているか確認してください。"
+            );
+          } finally {
+            setIsLoading(false);
+          }
+        },
+      });
+
+      // StrictModeなどで初期化が再実行されてもボタンを重複させない。
+      buttonContainer.replaceChildren();
+      googleId.renderButton(buttonContainer, {
+        type: "standard",
+        theme: "outline",
+        size: "large",
+        text: "continue_with",
+        shape: "rectangular",
+        width: Math.min(buttonContainer.clientWidth || 320, 320),
+        logo_alignment: "left",
+      });
+    };
+
+    let script = document.querySelector<HTMLScriptElement>(
+      'script[src="https://accounts.google.com/gsi/client"]'
+    );
+
+    const handleScriptLoad = (): void => {
+      initializeGoogle();
+    };
+
+    if (window.google?.accounts?.id) {
+      initializeGoogle();
+    } else if (script) {
+      script.addEventListener("load", handleScriptLoad, { once: true });
+    } else {
+      script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.addEventListener("load", handleScriptLoad, { once: true });
+      script.addEventListener(
+        "error",
+        () => {
+          setMessage(
+            "Googleログインを読み込めませんでした。ネットワークを確認してください。"
+          );
+        },
+        { once: true }
+      );
+      document.head.appendChild(script);
+    }
+
+    return () => {
+      script?.removeEventListener("load", handleScriptLoad);
+    };
+  }, [navigate]);
 
   // ログイン処理
   const handleLogin = async (
@@ -506,6 +672,47 @@ function LoginPage() {
           overflow-wrap: anywhere;
         }
 
+        /* Googleログイン */
+        .login-divider {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin: 18px 0 14px;
+          color: #8a96a8;
+          font-size: 12px;
+        }
+
+        .login-divider::before,
+        .login-divider::after {
+          flex: 1;
+          height: 1px;
+          background: #e9edf4;
+          content: "";
+        }
+
+        .login-google-section {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          min-height: 60px;
+        }
+
+        .login-google-button {
+          display: flex;
+          justify-content: center;
+          width: 100%;
+          min-height: 40px;
+        }
+
+        .login-google-caption {
+          margin: 0;
+          color: #7b879a;
+          font-size: 11px;
+          line-height: 1.6;
+          text-align: center;
+        }
+
         /* 新規登録エリア */
         .login-register {
           margin-top: 24px;
@@ -771,6 +978,27 @@ function LoginPage() {
             )}
           </button>
         </form>
+
+        {/* Googleログイン・初回利用時は自動で新規登録 */}
+        <div className="login-divider" aria-hidden="true">
+          または
+        </div>
+
+        <div
+          className="login-google-section"
+          style={{
+            pointerEvents: isLoading ? "none" : "auto",
+            opacity: isLoading ? 0.65 : 1,
+          }}
+        >
+          <div
+            id="google-signin-button"
+            className="login-google-button"
+          />
+          <p className="login-google-caption">
+            Googleアカウントでログイン・新規登録
+          </p>
+        </div>
 
         {/* 新規登録への導線 */}
         <div className="login-register">

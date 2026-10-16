@@ -7,8 +7,13 @@ from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from pwdlib import PasswordHash
+from google.auth.exceptions import GoogleAuthError
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token as google_id_token
 
 from app.database import engine
 from app.schemas.user import LoginRequest, UserUpdate
@@ -32,6 +37,16 @@ security = HTTPBearer()
 
 # .envからJWT署名用の秘密鍵を取得
 SECRET_KEY = os.getenv("SECRET_KEY")
+
+
+# Googleログインで使用するOAuthクライアントID
+# フロントエンドと同じGoogleクライアントIDを設定する。
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+
+
+# GoogleログインAPIで受け取るIDトークン
+class GoogleLoginRequest(BaseModel):
+    credential: str
 
 
 # JWTで使用する署名方式
@@ -136,6 +151,14 @@ def login(login_data: LoginRequest):
                 detail="ログインIDまたはパスワードが違います"
             )
 
+        # Googleログイン専用アカウントなど、
+        # パスワードが設定されていない場合は通常ログインを拒否する。
+        if user.password_hash is None:
+            raise HTTPException(
+                status_code=401,
+                detail="ログインIDまたはパスワードが違います"
+            )
+
         # パスワードを検証
         password_ok = password_hash.verify(
             login_data.password,
@@ -160,6 +183,146 @@ def login(login_data: LoginRequest):
             "access_token": access_token,
             "token_type": "bearer"
         }
+
+
+# Googleログイン・新規登録API
+@router.post("/google-login")
+def google_login(login_data: GoogleLoginRequest):
+    # クライアントIDが未設定ならGoogleログインを受け付けない。
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=500,
+            detail="Googleログインの設定が完了していません"
+        )
+
+    # Googleから受け取ったIDトークンをサーバー側で検証する。
+    try:
+        google_user = google_id_token.verify_oauth2_token(
+            login_data.credential,
+            google_requests.Request(),
+            GOOGLE_CLIENT_ID
+        )
+    except (ValueError, GoogleAuthError):
+        raise HTTPException(
+            status_code=401,
+            detail="Googleログインの認証に失敗しました。もう一度お試しください"
+        )
+
+    # Googleの安定したユーザー識別子と確認済みメールを確認する。
+    google_sub = google_user.get("sub")
+    email = google_user.get("email")
+    email_verified = google_user.get("email_verified")
+
+    if not google_sub or not email or not email_verified:
+        raise HTTPException(
+            status_code=401,
+            detail="Googleアカウントのメールアドレスを確認できませんでした"
+        )
+
+    # Googleアカウントの表示名を初期ニックネームに使用する。
+    nickname = (
+        google_user.get("name")
+        or email.split("@", 1)[0]
+        or "Googleユーザー"
+    ).strip()
+    if not nickname:
+        nickname = "Googleユーザー"
+    nickname = nickname[:50]
+
+    try:
+        # google_subを本人識別の基準にする。
+        # メールアドレスだけで既存アカウントと自動連携しない。
+        with engine.begin() as connection:
+            existing_user = connection.execute(
+                text("""
+                    SELECT id
+                    FROM users
+                    WHERE google_sub = :google_sub
+                """),
+                {"google_sub": google_sub}
+            ).fetchone()
+
+            if existing_user is not None:
+                user_id = existing_user.id
+            else:
+                # 同じメールアドレスが別アカウントに登録済みなら、
+                # 自動連携せずエラーにする。
+                email_user = connection.execute(
+                    text("""
+                        SELECT id, google_sub
+                        FROM users
+                        WHERE email = :email
+                    """),
+                    {"email": email}
+                ).fetchone()
+
+                if email_user is not None:
+                    if email_user.google_sub == google_sub:
+                        user_id = email_user.id
+                    else:
+                        raise HTTPException(
+                            status_code=409,
+                            detail=(
+                                "このメールアドレスは別のアカウントに登録されています。"
+                                "既存アカウントとの連携が必要な場合は、管理者にご相談ください"
+                            )
+                        )
+                else:
+                    # 初回Googleログイン時にユーザーを作成する。
+                    # Google専用アカウントはlogin_id/password_hashを持たない。
+                    insert_result = connection.execute(
+                        text("""
+                            INSERT INTO users (
+                                login_id,
+                                nickname,
+                                password_hash,
+                                email,
+                                google_sub
+                            )
+                            VALUES (
+                                NULL,
+                                :nickname,
+                                NULL,
+                                :email,
+                                :google_sub
+                            )
+                        """),
+                        {
+                            "nickname": nickname,
+                            "email": email,
+                            "google_sub": google_sub
+                        }
+                    )
+                    user_id = insert_result.lastrowid
+
+    except IntegrityError:
+        # 同時に初回ログインされた場合の重複登録に対応する。
+        with engine.connect() as connection:
+            existing_user = connection.execute(
+                text("""
+                    SELECT id
+                    FROM users
+                    WHERE google_sub = :google_sub
+                """),
+                {"google_sub": google_sub}
+            ).fetchone()
+
+        if existing_user is None:
+            raise HTTPException(
+                status_code=409,
+                detail="Googleアカウントの登録に失敗しました。もう一度お試しください"
+            )
+
+        user_id = existing_user.id
+
+    # 既存のログインと同じJWTを発行する。
+    access_token = create_access_token(user_id)
+
+    return {
+        "message": "Googleログイン成功",
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 
 # ログイン中ユーザーのプロフィール取得
