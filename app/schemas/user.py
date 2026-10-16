@@ -99,6 +99,7 @@ class UserUpdate(BaseModel):
             "pokeball",
             "pikachu",
             "eevee",
+            "venusaur",
             "charizard",
             "blastoise",
         ]

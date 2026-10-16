@@ -353,8 +353,31 @@ def update_profile_visibility(
     # MySQLへ接続する
     with engine.connect() as connection:
 
+        # 先にユーザーが存在するか確認する
+        #
+        # UPDATEのrowcountだけで判断すると、
+        # 設定値が変更されなかった場合にも
+        # ユーザーが存在しないと誤判定する可能性がある。
+        user_result = connection.execute(
+            text("""
+                SELECT id
+                FROM users
+                WHERE id = :user_id
+            """),
+            {"user_id": user_id},
+        )
+
+        user = user_result.fetchone()
+
+        # ユーザーが存在しない場合
+        if user is None:
+            raise HTTPException(
+                status_code=404,
+                detail="ユーザーが見つかりません",
+            )
+
         # 公開設定を更新する
-        result = connection.execute(
+        connection.execute(
             text("""
                 UPDATE users
                 SET is_profile_public = :is_profile_public
@@ -367,15 +390,6 @@ def update_profile_visibility(
                 "user_id": user_id,
             },
         )
-
-        # ユーザーが存在しない場合
-        if result.rowcount == 0:
-            connection.rollback()
-
-            raise HTTPException(
-                status_code=404,
-                detail="ユーザーが見つかりません",
-            )
 
         # DBの変更を確定する
         connection.commit()
