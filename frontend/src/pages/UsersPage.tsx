@@ -1,5 +1,4 @@
-
- // Reactの状態管理機能と、ページ表示時の処理に使う機能を読み込む
+// Reactの状態管理機能と、ページ表示時の処理に使う機能を読み込む
 import { useCallback, useEffect, useState } from "react";
 
 // React Routerから、別のページへ移動するための機能を読み込む
@@ -126,15 +125,6 @@ function UsersPage() {
 
   // ページ移動に使う
   const navigate = useNavigate();
-
-  // ログアウト処理
-  const handleLogout = (): void => {
-    // localStorageに保存しているJWTを削除する
-    localStorage.removeItem("access_token");
-
-    // ログイン画面へ移動する
-    navigate("/");
-  };
 
   // ユーザー一覧を取得する処理
   const getUsers = useCallback(async (): Promise<void> => {
@@ -724,14 +714,6 @@ function UsersPage() {
                 onClick={() => navigate("/profile")}
               >
                 マイプロフィール
-              </button>
-
-              <button
-                className="users-button"
-                type="button"
-                onClick={handleLogout}
-              >
-                ログアウト
               </button>
             </div>
           </header>
