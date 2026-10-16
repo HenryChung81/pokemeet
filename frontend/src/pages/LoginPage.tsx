@@ -10,7 +10,7 @@ interface LoginResponse {
   detail?: string;
 }
 
-// 参考画像に近いボールのロゴ
+// ボール型のロゴ
 function LoginBall() {
   return (
     <svg
@@ -21,7 +21,6 @@ function LoginBall() {
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        {/* ボール本体の立体感 */}
         <radialGradient
           id="login-ball-body"
           cx="32%"
@@ -34,7 +33,6 @@ function LoginBall() {
           <stop offset="100%" stopColor="#aebaca" />
         </radialGradient>
 
-        {/* 赤い部分のグラデーション */}
         <linearGradient
           id="login-ball-red"
           x1="0%"
@@ -47,7 +45,6 @@ function LoginBall() {
           <stop offset="100%" stopColor="#c92c26" />
         </linearGradient>
 
-        {/* 中央の白いボタン */}
         <radialGradient
           id="login-ball-center"
           cx="35%"
@@ -63,7 +60,6 @@ function LoginBall() {
         </clipPath>
       </defs>
 
-      {/* ボール本体 */}
       <circle
         cx="50"
         cy="50"
@@ -74,7 +70,6 @@ function LoginBall() {
       />
 
       <g clipPath="url(#login-ball-clip)">
-        {/* 中央を横切る赤い帯 */}
         <rect
           x="0"
           y="46.5"
@@ -83,7 +78,6 @@ function LoginBall() {
           fill="url(#login-ball-red)"
         />
 
-        {/* ボール表面の光 */}
         <ellipse
           cx="28"
           cy="17"
@@ -94,7 +88,6 @@ function LoginBall() {
           transform="rotate(-35 28 17)"
         />
 
-        {/* 右下の影 */}
         <ellipse
           cx="76"
           cy="81"
@@ -106,7 +99,6 @@ function LoginBall() {
         />
       </g>
 
-      {/* 中央の赤いリング */}
       <circle
         cx="50"
         cy="50"
@@ -114,7 +106,6 @@ function LoginBall() {
         fill="url(#login-ball-red)"
       />
 
-      {/* リングの内側 */}
       <circle
         cx="50"
         cy="50"
@@ -122,7 +113,6 @@ function LoginBall() {
         fill="#202733"
       />
 
-      {/* 中央のボタン */}
       <circle
         cx="50"
         cy="50"
@@ -132,7 +122,6 @@ function LoginBall() {
         strokeWidth="1.3"
       />
 
-      {/* ボタンの小さな反射光 */}
       <ellipse
         cx="46.5"
         cy="46.5"
@@ -143,7 +132,6 @@ function LoginBall() {
         transform="rotate(-35 46.5 46.5)"
       />
 
-      {/* 左上の縁のハイライト */}
       <path
         d="M 19 18 A 43 43 0 0 0 8 43"
         fill="none"
@@ -228,6 +216,11 @@ function LoginPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // 新規登録画面へ移動
+  const handleRegister = (): void => {
+    navigate("/register");
   };
 
   return (
@@ -330,7 +323,6 @@ function LoginPage() {
           margin-bottom: 34px;
         }
 
-        /* 参考画像風のボールロゴ */
         .login-brand-ball {
           display: block;
           flex: 0 0 46px;
@@ -484,7 +476,8 @@ function LoginPage() {
           transform: translateY(0);
         }
 
-        .login-button:focus-visible {
+        .login-button:focus-visible,
+        .login-register-button:focus-visible {
           outline: 3px solid rgba(50, 105, 237, 0.35);
           outline-offset: 3px;
         }
@@ -513,9 +506,57 @@ function LoginPage() {
           overflow-wrap: anywhere;
         }
 
+        /* 新規登録エリア */
+        .login-register {
+          margin-top: 24px;
+          padding-top: 22px;
+          border-top: 1px solid #eef1f6;
+          text-align: center;
+        }
+
+        .login-register-text {
+          margin: 0 0 12px;
+          color: #748197;
+          font-size: 13px;
+          line-height: 1.7;
+        }
+
+        .login-register-button {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          width: 100%;
+          min-height: 47px;
+          padding: 11px 16px;
+          border: 1px solid #d9e4f5;
+          border-radius: 12px;
+          background: #ffffff;
+          color: #3269ed;
+          font-family: inherit;
+          font-size: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          transition:
+            border-color 0.18s ease,
+            background 0.18s ease,
+            transform 0.18s ease;
+        }
+
+        .login-register-button:hover {
+          border-color: #a9c4fa;
+          background: #f5f8ff;
+          transform: translateY(-1px);
+        }
+
+        .login-register-arrow {
+          font-size: 17px;
+          font-weight: 500;
+        }
+
         .login-footer {
-          margin: 26px 0 0;
-          padding-top: 20px;
+          margin: 24px 0 0;
+          padding-top: 18px;
           border-top: 1px solid #eef1f6;
           color: #8a96a8;
           font-size: 11px;
@@ -577,7 +618,8 @@ function LoginPage() {
           }
 
           .login-input,
-          .login-button {
+          .login-button,
+          .login-register-button {
             transition: none;
           }
         }
@@ -730,6 +772,29 @@ function LoginPage() {
           </button>
         </form>
 
+        {/* 新規登録への導線 */}
+        <div className="login-register">
+          <p className="login-register-text">
+            まだアカウントをお持ちでない方
+          </p>
+
+          <button
+            className="login-register-button"
+            type="button"
+            onClick={handleRegister}
+          >
+            <span>新規登録はこちら</span>
+
+            <span
+              className="login-register-arrow"
+              aria-hidden="true"
+            >
+              →
+            </span>
+          </button>
+        </div>
+
+        {/* フッター */}
         <p className="login-footer">
           <span
             className="login-footer-mark"
